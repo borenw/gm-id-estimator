@@ -81,6 +81,14 @@
   canvas { width:100%; height:auto; display:block; }
   #dev { cursor:grab; touch-action:none; }
   #dev:active { cursor:grabbing; }
+  /* formula boxes overlaid on the device plot's top-right */
+  .fboxes { position:absolute; top:8px; right:10px; display:flex; flex-direction:column; gap:6px; align-items:flex-end; z-index:2; pointer-events:none; }
+  .fbox { background:rgba(255,255,255,.92); padding:2px 9px; color:#111; font-size:13px; }
+  .fbox.fweak { border:2px dashed #111; border-radius:6px; }
+  .fbox.fstrong { border:2px solid #111; border-radius:6px; }
+  /* schematic gm estimate: black, boxed — dashed (weak inv) or solid (strong inv) */
+  .gmest { color:#111; font-weight:800; border:2px solid #111; border-radius:5px; padding:0 5px; background:rgba(255,255,255,.75); }
+  .gmest.weak { border-style:dashed; }
   .plotwrap { text-align:center; margin:10px 0; }
   table { width:100%; border-collapse:collapse; border:1px solid var(--border); font-size:13.5px; margin:10px 0; }
   th { background:var(--blue-light); text-align:right; padding:7px 10px; border-bottom:2px solid var(--blue); }
@@ -128,7 +136,12 @@
     </div><!--/schem-->
     <div class="plotcol">
       <div class="figtitle" style="margin:0 0 4px">g<sub>m</sub> vs I<sub>d</sub> — selected device (log–log)</div>
-      <div class="plotwrap"><canvas id="dev" width="900" height="540"></canvas></div>
+      <div class="plotwrap" style="position:relative"><canvas id="dev" width="900" height="540"></canvas>
+        <div class="fboxes">
+          <div class="fbox fweak" id="f_weak">weak</div>
+          <div class="fbox fstrong" id="f_strong">strong</div>
+        </div>
+      </div>
       <div class="legend" style="font-size:12px">
         <span><i class="sw" style="background:#2f9e44"></i> 100 µm</span>
         <span><i class="sw" style="background:#f08c00"></i> 10 µm</span>
@@ -525,12 +538,23 @@ function calc(){
   const gmS=Math.sqrt(2*beta*id), gmW=P.kappa*id;
   const weak=gmW<gmS, gm=Math.min(gmS,gmW);
   const vov=2*id/gmS, ro=1/((P.lamL/L)*id), cg=P.cox*Wt*L;   // cg in fF
-  $('o_gm').textContent=fS(gm);
+  const gmEl=$('o_gm'); gmEl.textContent=fS(gm); gmEl.className='gmest'+(weak?' weak':'');  // black, dashed=weak / solid=strong
   $('o_ro').textContent=fR(ro);
   $('o_vov').textContent=weak? fV(vov)+' (sub-Vth)':fV(vov);
   $('o_vov').parentElement.classList.toggle('sub',weak);
   $('o_vth').textContent=fV($('m_type').value==='PMOS'? -P.vth : P.vth);
   $('o_cg').textContent=fC(cg);
+  updateFormulas();
+}
+// two boxed formulas on the plot: weak (dashed, with the process κ) + strong (solid, with the process coefficient)
+function updateFormulas(){
+  const src=$('m_src').value, P=calcParams(src,$('m_type').value,$('m_flav').value);
+  const Lref={sky:0.15,t180:0.18,t65:0.065,t28:0.028}[src];
+  const CmS=Math.sqrt(2*P.uCox*1e-9/Lref)*1e3;   // eq2 coefficient in mS at this node's Lmin
+  const fw=$('f_weak'), fs=$('f_strong');
+  fw.innerHTML='\\(g_m=\\kappa\\,I_{ds}\\quad(\\kappa='+Math.round(P.kappa)+')\\)';
+  fs.innerHTML='\\(g_m='+(+CmS.toPrecision(2))+'\\,\\mathrm{mS}\\,\\sqrt{\\dfrac{I_{ds}}{1\\,\\mathrm{mA}}}\\,\\sqrt{\\dfrac{W}{1\\,\\mu\\mathrm{m}}}\\)';
+  if(window.MathJax&&MathJax.typesetPromise){MathJax.typesetPromise([fw,fs]).catch(function(){});}
 }
 // right-hand gm-vs-Id plot — real sky130 curves, or the selected node's model curves
 const dev=$('dev'), dc=dev.getContext('2d');
