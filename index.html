@@ -50,7 +50,8 @@
   /* --- interactive schematic calculator --- */
   .calc { border:1px solid var(--border); border-radius:10px; padding:18px 18px 14px; margin:6px 0 30px; background:#fff; }
   .calcrow { display:flex; gap:22px; flex-wrap:wrap; align-items:center; justify-content:center; }
-  .schem { position:relative; flex:1 1 300px; max-width:430px; margin:0 auto; }
+  .schem { position:relative; flex:1 1 300px; max-width:440px; margin:0 auto; }
+  .schem img { width:100%; height:auto; display:block; }
   .plotcol { flex:1 1 370px; min-width:300px; }
   .schem svg { width:100%; height:auto; display:block; }
   .ov { position:absolute; transform:translateY(-50%); font-size:15px; color:var(--text); white-space:nowrap; line-height:1.1; }
@@ -109,54 +110,30 @@
   <div class="calc">
     <div class="calcrow">
     <div class="schem">
-      <svg viewBox="0 0 900 1000" role="img" aria-label="Diode-connected MOSFET biased by an id current source, source to ground">
-        <g fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-          <!-- top rail + current source -->
-          <line x1="430" y1="50" x2="430" y2="151"/>
-          <circle cx="430" cy="205" r="54"/>
-          <line x1="430" y1="170" x2="430" y2="236"/>
-          <polyline points="414,216 430,240 446,216"/>
-          <!-- source-node to drain -->
-          <line x1="430" y1="259" x2="430" y2="516"/>
-          <!-- diode feedback loop (drain -> right -> down -> gate) -->
-          <polyline points="430,395 645,395 645,568"/>
-          <line x1="645" y1="568" x2="446" y2="568"/>
-          <path d="M446,568 A16,16 0 0 0 414,568"/>
-          <line x1="414" y1="568" x2="410" y2="568"/>
-          <!-- transistor: gate plate + channel bar -->
-          <line x1="408" y1="516" x2="408" y2="604" stroke-width="6"/>
-          <line x1="430" y1="516" x2="430" y2="604" stroke-width="6"/>
-          <!-- source lead + NMOS arrow -->
-          <line x1="430" y1="604" x2="430" y2="736"/>
-          <polygon points="430,600 421,614 439,614" fill="#111" stroke="none"/>
-          <!-- ground -->
-          <line x1="398" y1="736" x2="462" y2="736"/>
-          <line x1="410" y1="750" x2="450" y2="750"/>
-          <line x1="421" y1="764" x2="439" y2="764"/>
-        </g>
-        <g fill="#111" stroke="none"><circle cx="430" cy="395" r="6"/><circle cx="645" cy="568" r="6"/></g>
-      </svg>
-      <!-- overlaid inputs / outputs positioned over the drawing -->
-      <div class="ov" style="left:55.5%;top:20.5%"><label>id =</label> <input id="in_id" value="50" inputmode="decimal"><span class="unit">µA</span></div>
-      <div class="ov" style="left:3.5%;top:57%"><label>M =</label> <input id="in_M" value="1" inputmode="numeric"></div>
-      <div class="ov" style="left:21.5%;top:53.7%"><label>W =</label> <input id="in_W" value="10"><span class="unit">µm</span></div>
-      <div class="ov" style="left:21.5%;top:59.6%"><label>L =</label> <input id="in_L" value="0.5"><span class="unit">µm</span></div>
-      <div class="ov" style="left:73%;top:43.2%"><label>gm =</label> <span class="out" id="o_gm">—</span></div>
-      <div class="ov" style="left:73%;top:48.8%"><label>ro =</label> <span class="out" id="o_ro">—</span></div>
-      <div class="ov" style="left:73%;top:54.4%"><label>vov =</label> <span class="out" id="o_vov">—</span></div>
-      <div class="ov" style="left:73%;top:60%"><label>vth =</label> <span class="out" id="o_vth">—</span></div>
-      <div class="ov" style="left:73%;top:65.8%"><label>cg =</label> <span class="out" id="o_cg">—</span></div>
+      <img src="gm_id_diode_nmos.png" width="901" height="967" alt="Diode-connected MOSFET biased by an id current source, source to ground; labels M, W, L, id, gm, ro, vov, vth, cg">
+      <!-- input/output fields overlaid after the printed &quot;… =&quot; labels on the drawing -->
+      <div class="ov" style="left:61%;top:20.5%"><input id="in_id" value="50" inputmode="decimal"><span class="unit">µA</span></div>
+      <div class="ov" style="left:16%;top:58%"><input id="in_M" value="1" inputmode="numeric"></div>
+      <div class="ov" style="left:34%;top:54%"><input id="in_W" value="10"><span class="unit">µm</span></div>
+      <div class="ov" style="left:34%;top:60%"><input id="in_L" value="0.5"><span class="unit">µm</span></div>
+      <div class="ov" style="left:81.5%;top:43.5%"><span class="out" id="o_gm">—</span></div>
+      <div class="ov" style="left:81.5%;top:50%"><span class="out" id="o_ro">—</span></div>
+      <div class="ov" style="left:81.5%;top:56.5%"><span class="out" id="o_vov">—</span></div>
+      <div class="ov" style="left:81.5%;top:63%"><span class="out" id="o_vth">—</span></div>
+      <div class="ov" style="left:81.5%;top:69%"><span class="out" id="o_cg">—</span></div>
     </div><!--/schem-->
     <div class="plotcol">
       <div class="figtitle" style="margin:0 0 4px">g<sub>m</sub> vs I<sub>d</sub> — selected device (log–log)</div>
       <div class="plotwrap"><canvas id="dev" width="560" height="430"></canvas></div>
       <div class="legend" style="font-size:12px">
-        <span><i class="sw" style="background:#111;height:3px"></i> κ·I<sub>d</sub></span>
         <span><i class="sw" style="background:#2f9e44"></i> 100 µm</span>
         <span><i class="sw" style="background:#f08c00"></i> 10 µm</span>
         <span><i class="sw" style="background:#e03131"></i> 1 µm</span>
+        <span>– – dash = weak (κ·I<sub>d</sub>)</span>
+        <span>—— solid = strong (√-law)</span>
         <span><i class="sw" style="background:#0052CC"></i> ● op-point</span>
       </div>
+      <div class="cap" style="font-size:11.5px">sky130 curves also show the <strong>measured</strong> ngspice points (dots); other selections are the model only.</div>
     </div>
     </div><!--/calcrow-->
     <div class="modelbar">
@@ -560,29 +537,32 @@ function drawDev(){
   const W=dev.width,H=dev.height,m={l:60,r:16,t:22,b:50};
   const px=W-m.l-m.r,py=H-m.t-m.b;
   dc.clearRect(0,0,W,H);
-  const Ix0=1e-9,Ix1=1e-2,Gy0=1e-8,Gy1=1e-1;
+  const Ix0=1e-9,Ix1=1e-1,Gy0=1e-8,Gy1=1e0;   // extended Id range (up to 100 mA) for wide devices
   const X=I=>m.l+(Math.log10(I)-Math.log10(Ix0))/(Math.log10(Ix1)-Math.log10(Ix0))*px;
   const Y=g=>m.t+py-(Math.log10(g)-Math.log10(Gy0))/(Math.log10(Gy1)-Math.log10(Gy0))*py;
   dc.font='11px sans-serif';
-  for(let e=-9;e<=-2;e++){const x=X(10**e);dc.strokeStyle='#eef1f5';dc.lineWidth=1;dc.beginPath();dc.moveTo(x,m.t);dc.lineTo(x,m.t+py);dc.stroke();dc.fillStyle='#5E6C84';dc.textAlign='center';dc.fillText('10'+supr(e),x,m.t+py+16);}
-  for(let e=-8;e<=-1;e++){const y=Y(10**e);dc.strokeStyle='#eef1f5';dc.beginPath();dc.moveTo(m.l,y);dc.lineTo(m.l+px,y);dc.stroke();dc.fillStyle='#5E6C84';dc.textAlign='right';dc.fillText('10'+supr(e),m.l-6,y+4);}
+  for(let e=-9;e<=-1;e++){const x=X(10**e);dc.strokeStyle='#eef1f5';dc.lineWidth=1;dc.beginPath();dc.moveTo(x,m.t);dc.lineTo(x,m.t+py);dc.stroke();dc.fillStyle='#5E6C84';dc.textAlign='center';dc.fillText('10'+supr(e),x,m.t+py+16);}
+  for(let e=-8;e<=0;e++){const y=Y(10**e);dc.strokeStyle='#eef1f5';dc.beginPath();dc.moveTo(m.l,y);dc.lineTo(m.l+px,y);dc.stroke();dc.fillStyle='#5E6C84';dc.textAlign='right';dc.fillText('10'+supr(e),m.l-6,y+4);}
   dc.strokeStyle='#172B4D';dc.lineWidth=1.5;dc.beginPath();dc.moveTo(m.l,m.t);dc.lineTo(m.l,m.t+py);dc.lineTo(m.l+px,m.t+py);dc.stroke();
   dc.fillStyle='#172B4D';dc.font='12px sans-serif';dc.textAlign='center';dc.fillText('I_d (A)',m.l+px/2,H-6);
   dc.save();dc.translate(14,m.t+py/2);dc.rotate(-Math.PI/2);dc.fillText('g_m (S)',0,0);dc.restore();
-  // weak-inversion κ·Id asymptote
-  dc.strokeStyle='#111';dc.lineWidth=1.4;dc.setLineDash([6,5]);dc.beginPath();dc.moveTo(X(Ix0),Y(P.kappa*Ix0));dc.lineTo(X(Ix1),Y(P.kappa*Ix1));dc.stroke();dc.setLineDash([]);
-  // three W curves: real measured (sky130) or model
+  // per-width, two-segment model: dashed weak inversion (gm=κ·Id) up to the corner,
+  // then solid strong inversion (gm=√(2·µnCox·(W/L)·Id)) beyond it — same κ, µnCox as the selection.
   const cols={100:'#2f9e44',10:'#f08c00',1:'#e03131'};
   const Lref={sky:0.15,t180:0.18,t65:0.065,t28:0.028}[src];
+  const uc=P.uCox*1e-6;
   [100,10,1].forEach(w=>{
-    dc.strokeStyle=cols[w];dc.lineWidth=2.2;dc.beginPath();
-    if(real){ SKY[w].d.forEach((p,i)=>{const x=X(p[0]),y=Y(p[1]);i?dc.lineTo(x,y):dc.moveTo(x,y);});dc.stroke();
-      dc.fillStyle=cols[w];SKY[w].d.forEach(p=>{dc.beginPath();dc.arc(X(p[0]),Y(p[1]),2.4,0,7);dc.fill();}); }
-    else { let st=false;
-      for(let k=0;k<=140;k++){const I=Ix0*Math.pow(Ix1/Ix0,k/140);
-        const gm=Math.min(P.kappa*I, Math.sqrt(2*P.uCox*1e-6*(w/Lref)*I));
-        if(gm<Gy0||gm>Gy1){st=false;continue;} const x=X(I),y=Y(gm); st?dc.lineTo(x,y):dc.moveTo(x,y);st=true;}
-      dc.stroke(); }
+    const beta=uc*(w/Lref), Idc=2*beta/(P.kappa*P.kappa);   // corner: κ·Id = √(2β·Id)
+    // weak-inversion dashed segment
+    dc.strokeStyle=cols[w];dc.lineWidth=2.2;dc.setLineDash([6,5]);dc.beginPath();
+    dc.moveTo(X(Ix0),Y(P.kappa*Ix0)); dc.lineTo(X(Math.min(Idc,Ix1)),Y(P.kappa*Math.min(Idc,Ix1)));dc.stroke();
+    // strong-inversion solid segment
+    dc.setLineDash([]);dc.beginPath();let st=false;
+    for(let k=0;k<=120;k++){const I=Idc*Math.pow(Ix1/Idc,k/120); if(I>Ix1)break;
+      const gm=Math.sqrt(2*beta*I); if(gm<Gy0||gm>Gy1){st=false;continue;} const x=X(I),y=Y(gm);st?dc.lineTo(x,y):dc.moveTo(x,y);st=true;}
+    dc.stroke();
+    // sky130: overlay the actual measured points (real data) as small dots
+    if(real){ dc.fillStyle=cols[w]; SKY[w].d.forEach(p=>{dc.beginPath();dc.arc(X(p[0]),Y(p[1]),2.2,0,7);dc.fill();}); }
   });
   // operating point from the live inputs (actual W·M / L)
   const W_=+$('in_W').value,L_=+$('in_L').value,M_=Math.max(1,Math.round(+$('in_M').value)||1),id_=(+$('in_id').value)*1e-6;
