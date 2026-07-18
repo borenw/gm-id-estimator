@@ -39,7 +39,9 @@ With the sketch's numbers this is **2.5 µA/µm** (i.e. `I_d = W/0.4`, W in µm)
 
 ## Constants vs. process node
 
-Only **one** constant really moves with the node. κ is temperature-limited (≈ 15–25 everywhere); the process story lives in **μ<sub>n</sub>C<sub>ox</sub>** and hence the corner current density. The page ships an **editable** node table (seeded with rough textbook estimates) and redraws the chart and plot as you type your PDK values in.
+Only **one** constant really moves with the node. **κ** — the emphasis of this page (bold black, plotted on the **left** axis) — is temperature-limited and stays ≈ 15–25 everywhere; the process story lives in **μ<sub>n</sub>C<sub>ox</sub>** (right axis) and hence the corner current density. The page ships an **editable** node table (seeded with rough textbook estimates) and redraws the chart and plot as you type your PDK values in.
+
+The table and chart include a highlighted **SkyWater sky130 (open PDK)** row, drawn as standalone ◆ markers rather than part of the estimate trend line. Its values are approximate open-PDK figures — refine them from your own ngspice/sky130 extraction.
 
 > ⚠️ **The per-node numbers are order-of-magnitude teaching estimates, not fab data.** Long-channel low-field μ<sub>n</sub>C<sub>ox</sub> depends strongly on L, V<sub>ds</sub>, back-bias and device flavor (LVT/HVT). For **FinFET/GAA** nodes μ<sub>n</sub>C<sub>ox</sub> loses its plain meaning (drive is quantized per fin) — use the gm/I<sub>d</sub> lookup-table method with your PDK there. Replace the seed values with your own.
 

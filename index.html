@@ -32,6 +32,11 @@
   .drawing { text-align:center; margin:16px 0 8px; }
   .drawing img { max-width:100%; height:auto; border:1px solid var(--border); border-radius:8px; }
   .cap { font-size:13px; color:var(--text-sub); margin-top:6px; }
+  .figtitle { font-weight:600; font-size:14.5px; text-align:center; margin:14px 0 4px; color:var(--text); }
+  .figtitle .fnum { color:var(--blue); }
+  tr.sky td { background:#FFF7E6; }
+  tr.sky td:first-child { color:var(--orange); }
+  td.kcol input { font-weight:800; color:#111; }
   .eqbox { background:var(--blue-lighter); border:1px solid var(--blue-light);
     border-radius:8px; padding:6px 18px; margin:14px 0; }
   .card { background:var(--grey-bg); border:1px solid var(--border); border-radius:8px;
@@ -73,7 +78,7 @@
 
   <div class="drawing">
     <img src="gm_Id.png" alt="Hand sketch: gm vs Ids for a 180nm NMOS, L=0.36um. eq1 gm=20*Ids (weak-inversion line), eq2 gm=1mS*sqrt(Ids/1mA)*sqrt(W/1um) (strong-inversion sqrt law), with W=10um and W=100um curves and the 250uA corner.">
-    <div class="cap">The original bench sketch — a 180&nbsp;nm NMOS, L&nbsp;=&nbsp;0.36&nbsp;µm. Everything below is a live, generalized version of it.</div>
+    <div class="cap"><strong>Figure&nbsp;1 · The original bench sketch</strong> — a 180&nbsp;nm NMOS, L&nbsp;=&nbsp;0.36&nbsp;µm. Everything below is a live, generalized version of it.</div>
   </div>
 
   <h2>1. The two equations</h2>
@@ -113,6 +118,7 @@
         <input type="range" id="l" min="0.02" max="1" step="0.01">
       </div>
     </div>
+    <div class="figtitle"><span class="fnum">Figure 2</span> · Transconductance g<sub>m</sub> vs drain current I<sub>d</sub> — the weak-inversion line meets the √-law curve</div>
     <div class="plotwrap"><canvas id="plot" width="880" height="480"></canvas></div>
     <div class="legend">
       <span><i class="sw" style="background:#111"></i> eq 1: g<sub>m</sub>=κ·I<sub>d</sub> (weak inv.)</span>
@@ -121,7 +127,7 @@
       <span><i class="sw" style="background:var(--red)"></i> W = 1 µm</span>
       <span>● corner (eq1 = eq2)</span>
     </div>
-    <label class="toggle"><input type="checkbox" id="logtog"> log–log axes (straightens both asymptotes)</label>
+    <label class="toggle"><input type="checkbox" id="logtog" checked> log–log axes (straightens both asymptotes) — default</label>
   </div>
 
   <h2>3. The constants vs. process node</h2>
@@ -132,7 +138,7 @@
   <div style="overflow-x:auto">
   <table id="ntable">
     <thead><tr>
-      <th>Node</th><th>μ<sub>n</sub>C<sub>ox</sub> (µA/V²)</th><th>κ (S/A)</th><th>L<sub>min</sub> (µm)</th>
+      <th>Node</th><th>μ<sub>n</sub>C<sub>ox</sub> (µA/V²)</th><th style="color:#111">κ (S/A)</th><th>L<sub>min</sub> (µm)</th>
       <th>eq2 coeff*<br>(mS)</th><th>corner I<sub>d</sub>/W<br>(µA/µm)</th>
     </tr></thead>
     <tbody id="nbody"></tbody>
@@ -140,11 +146,13 @@
   </div>
   <div class="cap">*eq2 coeff = the "1&nbsp;mS" in <code>g<sub>m</sub>=coeff·√(I<sub>d</sub>/1mA)·√(W/1µm)</code>, evaluated at that row's L<sub>min</sub>; equals \(\sqrt{2\mu_nC_{ox}\cdot(1\text{µm}/L_{min})\cdot1\text{mA}}\). Corner density uses L = L<sub>min</sub>.</div>
 
+  <div class="figtitle"><span class="fnum">Figure 3</span> · First-order constants vs process node — <strong>κ (bold black, left axis)</strong> is temperature-limited and stays ≈flat; μ<sub>n</sub>C<sub>ox</sub> (right axis) carries the process</div>
   <div class="plotwrap"><canvas id="chart" width="880" height="440"></canvas></div>
   <div class="legend">
-    <span><i class="sw" style="background:var(--blue)"></i> μ<sub>n</sub>C<sub>ox</sub> (µA/V²)</span>
-    <span><i class="sw" style="background:var(--red)"></i> κ (S/A)</span>
-    <span><i class="sw" style="background:var(--green)"></i> corner I<sub>d</sub>/W at L<sub>min</sub> (µA/µm)</span>
+    <span><i class="sw" style="background:#111;height:4px"></i> <strong>κ = (g<sub>m</sub>/I<sub>d</sub>)<sub>max</sub> (S/A) — left</strong></span>
+    <span><i class="sw" style="background:var(--blue)"></i> μ<sub>n</sub>C<sub>ox</sub> (µA/V²) — right</span>
+    <span><i class="sw" style="background:var(--green)"></i> corner I<sub>d</sub>/W at L<sub>min</sub> (µA/µm) — left</span>
+    <span>◆ sky130 (open PDK)</span>
   </div>
 
   <h2>4. How to use this as a design shortcut</h2>
@@ -155,25 +163,27 @@
   </ul>
 
   <footer>
-    Bo Wang · <a href="https://github.com/borenw/gm-id-estimator">source on GitHub</a> ·
-    part of <a href="https://borenw.github.io/">Bo's Engineering Curriculum</a>
+    <strong>Page 9</strong> · <a href="https://borenw.github.io/">Bo's Engineering Curriculum</a> ·
+    <a href="https://github.com/borenw/gm-id-estimator">source on GitHub</a>
     <br><span id="lastmod" style="font-size:12px"></span>
   </footer>
 </div>
 
 <script>
 // ---- default node data (EDITABLE textbook estimates) --------------------
-// [label, node_nm (for x-axis), uCox uA/V^2, kappa S/A, Lmin um]
+// [label, node_nm (for x-axis), uCox uA/V^2, kappa S/A, Lmin um, isRealData]
+// isRealData rows are drawn as standalone ◆ markers, NOT connected into the estimate trend line.
 const NODES = [
-  ["0.35 µm", 350, 170, 20, 0.35],
-  ["0.25 µm", 250, 200, 20, 0.25],
-  ["0.18 µm", 180, 180, 20, 0.18],
-  ["0.13 µm", 130, 320, 21, 0.13],
-  ["90 nm",    90, 400, 22, 0.09],
-  ["65 nm",    65, 480, 22, 0.065],
-  ["45 nm",    45, 560, 23, 0.045],
-  ["28 nm",    28, 600, 24, 0.028],
-  ["16 nm†",   16, 700, 26, 0.016],
+  ["0.35 µm", 350, 170, 20, 0.35, false],
+  ["0.25 µm", 250, 200, 20, 0.25, false],
+  ["0.18 µm", 180, 180, 20, 0.18, false],
+  ["0.13 µm", 130, 320, 21, 0.13, false],
+  ["sky130 (open)", 130, 120, 24, 0.15, true],  // SkyWater sky130 nfet_01v8 — approx open-PDK values; refine via ngspice
+  ["90 nm",    90, 400, 22, 0.09, false],
+  ["65 nm",    65, 480, 22, 0.065, false],
+  ["45 nm",    45, 560, 23, 0.045, false],
+  ["28 nm",    28, 600, 24, 0.028, false],
+  ["16 nm†",   16, 700, 26, 0.016, false],
 ];
 let data = NODES.map(r => r.slice());
 let sel = 2; // default 180nm row
@@ -270,10 +280,11 @@ function buildTable(){
   nbody.innerHTML='';
   data.forEach((r,i)=>{
     const tr=document.createElement('tr');
+    if(r[5]) tr.className='sky';
     const coeff=eq2coeff_mS(r[2],r[4]), cd=cornerDensity(r[2],r[3],r[4]);
     tr.innerHTML=`<td>${r[0]}</td>
       <td><input type="number" data-i="${i}" data-c="2" value="${r[2]}" step="10"></td>
-      <td><input type="number" data-i="${i}" data-c="3" value="${r[3]}" step="0.5"></td>
+      <td class="kcol"><input type="number" data-i="${i}" data-c="3" value="${r[3]}" step="0.5"></td>
       <td><input type="number" data-i="${i}" data-c="4" value="${r[4]}" step="0.005"></td>
       <td>${coeff.toFixed(2)}</td><td>${cd.toFixed(2)}</td>`;
     nbody.appendChild(tr);
@@ -285,37 +296,53 @@ function buildTable(){
 }
 const ch=document.getElementById('chart'), cc=ch.getContext('2d');
 function drawChart(){
-  const W=ch.width,H=ch.height,m={l:58,r:58,t:20,b:56};
+  const W=ch.width,H=ch.height,m={l:60,r:60,t:22,b:56};
   const px=W-m.l-m.r,py=H-m.t-m.b;
   cc.clearRect(0,0,W,H);
   const xs=data.map(r=>r[1]);
   const xmin=Math.log10(Math.min(...xs))-0.05, xmax=Math.log10(Math.max(...xs))+0.05;
   const X=nm=>m.l+(Math.log10(nm)-xmin)/(xmax-xmin)*px;
-  // left axis: uCox (0..800), right axis: kappa & density share 0..40
-  const uMax=800, rMax=40;
-  const YL=v=>m.t+py-v/uMax*py;
-  const YR=v=>m.t+py-v/rMax*py;
-  cc.strokeStyle='#e6e9ee';cc.lineWidth=1;cc.fillStyle='#5E6C84';cc.font='11px sans-serif';
-  for(let v=0;v<=uMax;v+=200){const y=YL(v);cc.beginPath();cc.moveTo(m.l,y);cc.lineTo(m.l+px,y);cc.stroke();
-    cc.textAlign='right';cc.fillStyle='#0052CC';cc.fillText(v,m.l-8,y+4);}
-  for(let v=0;v<=rMax;v+=10){const y=YR(v);cc.textAlign='left';cc.fillStyle='#5E6C84';cc.fillText(v,m.l+px+8,y+4);}
-  // x labels
-  cc.fillStyle='#5E6C84';cc.textAlign='center';
-  data.forEach(r=>{cc.save();cc.translate(X(r[1]),m.t+py+14);cc.fillText(r[0],0,0);cc.restore();
+  // LEFT axis: kappa (S/A) & corner density (µA/µm) share 0..kMax  (κ is the emphasis)
+  // RIGHT axis: µnCox (µA/V²), 0..uMax
+  const kMax=40, uMax=800;
+  const YL=v=>m.t+py-v/kMax*py;   // left  (κ, density)
+  const YR=v=>m.t+py-v/uMax*py;   // right (µnCox)
+  cc.lineWidth=1;cc.font='11px sans-serif';
+  // left gridlines + black κ ticks
+  for(let v=0;v<=kMax;v+=10){const y=YL(v);cc.strokeStyle='#e6e9ee';cc.beginPath();cc.moveTo(m.l,y);cc.lineTo(m.l+px,y);cc.stroke();
+    cc.textAlign='right';cc.fillStyle='#111';cc.fillText(v,m.l-8,y+4);}
+  // right µnCox ticks (blue)
+  for(let v=0;v<=uMax;v+=200){const y=YR(v);cc.textAlign='left';cc.fillStyle='#0052CC';cc.fillText(v,m.l+px+8,y+4);}
+  // x labels + light verticals
+  data.forEach(r=>{cc.fillStyle=r[5]?'#f08c00':'#5E6C84';cc.textAlign='center';
+    cc.save();cc.translate(X(r[1]),m.t+py+ (r[5]?28:14));cc.fillText(r[0],0,0);cc.restore();
     cc.strokeStyle='#eef1f5';cc.beginPath();cc.moveTo(X(r[1]),m.t);cc.lineTo(X(r[1]),m.t+py);cc.stroke();});
+  // frame
   cc.strokeStyle='#172B4D';cc.lineWidth=1.5;cc.beginPath();
   cc.moveTo(m.l,m.t);cc.lineTo(m.l,m.t+py);cc.lineTo(m.l+px,m.t+py);cc.stroke();
-  cc.fillStyle='#0052CC';cc.textAlign='center';cc.font='12px sans-serif';
-  cc.save();cc.translate(16,m.t+py/2);cc.rotate(-Math.PI/2);cc.fillText('µnCox (µA/V²)',0,0);cc.restore();
-  cc.fillStyle='#5E6C84';cc.save();cc.translate(W-12,m.t+py/2);cc.rotate(-Math.PI/2);cc.fillText('κ  &  Id/W (µA/µm)',0,0);cc.restore();
-  cc.fillStyle='#172B4D';cc.fillText('process node  (larger → smaller)',m.l+px/2,H-10);
-  // series
-  function line(getV,Yf,col,dash){cc.strokeStyle=col;cc.lineWidth=2.2;cc.setLineDash(dash||[]);cc.beginPath();
-    data.forEach((r,i)=>{const x=X(r[1]),y=Yf(getV(r));i?cc.lineTo(x,y):cc.moveTo(x,y);});cc.stroke();
-    cc.setLineDash([]);cc.fillStyle=col;data.forEach(r=>{cc.beginPath();cc.arc(X(r[1]),Yf(getV(r)),3.5,0,7);cc.fill();});}
-  line(r=>r[2], YL, '#0052CC');                              // uCox left
-  line(r=>r[3], YR, '#e03131', [5,4]);                       // kappa right
-  line(r=>cornerDensity(r[2],r[3],r[4]), YR, '#2f9e44', [2,3]); // density right
+  // axis titles, color-matched
+  cc.textAlign='center';cc.font='12px sans-serif';
+  cc.fillStyle='#111';cc.save();cc.translate(16,m.t+py/2);cc.rotate(-Math.PI/2);cc.fillText('κ = (gm/Id)max (S/A)  &  Id/W (µA/µm)',0,0);cc.restore();
+  cc.fillStyle='#0052CC';cc.save();cc.translate(W-12,m.t+py/2);cc.rotate(-Math.PI/2);cc.fillText('µnCox (µA/V²)',0,0);cc.restore();
+  cc.fillStyle='#172B4D';cc.fillText('process node  (larger → smaller)',m.l+px/2,H-8);
+  // estimate-trend series over the NON-real-data rows only
+  const trend=data.filter(r=>!r[5]);
+  function line(rows,getV,Yf,col,lw,dash){cc.strokeStyle=col;cc.lineWidth=lw;cc.setLineDash(dash||[]);cc.beginPath();
+    rows.forEach((r,i)=>{const x=X(r[1]),y=Yf(getV(r));i?cc.lineTo(x,y):cc.moveTo(x,y);});cc.stroke();
+    cc.setLineDash([]);cc.fillStyle=col;rows.forEach(r=>{cc.beginPath();cc.arc(X(r[1]),Yf(getV(r)),3.2,0,7);cc.fill();});}
+  line(trend, r=>r[2], YR, '#0052CC', 2.2);                          // µnCox  right, blue
+  line(trend, r=>cornerDensity(r[2],r[3],r[4]), YL, '#2f9e44', 2, [2,3]); // density left, green
+  line(trend, r=>r[3], YL, '#111', 3.6);                             // κ  left, THICK BOLD BLACK (emphasis)
+  // real-data (sky130) as standalone ◆ diamonds on each axis
+  function diamond(x,y,col,r){cc.fillStyle=col;cc.beginPath();
+    cc.moveTo(x,y-r);cc.lineTo(x+r,y);cc.lineTo(x,y+r);cc.lineTo(x-r,y);cc.closePath();cc.fill();
+    cc.strokeStyle='#7a4a00';cc.lineWidth=1;cc.stroke();}
+  data.filter(r=>r[5]).forEach(r=>{const x=X(r[1]);
+    diamond(x,YL(r[3]),'#111',6);                 // κ (left, black)
+    diamond(x,YR(r[2]),'#0052CC',6);              // µnCox (right, blue)
+    diamond(x,YL(cornerDensity(r[2],r[3],r[4])),'#2f9e44',6); // density (left, green)
+    cc.fillStyle='#f08c00';cc.font='bold 11px sans-serif';cc.textAlign='center';
+    cc.fillText('sky130 ◆', x, m.t-6);});
 }
 
 // ---- init ---------------------------------------------------------------
