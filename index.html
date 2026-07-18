@@ -130,7 +130,21 @@
     <label class="toggle"><input type="checkbox" id="logtog" checked> log–log axes (straightens both asymptotes) — default</label>
   </div>
 
-  <h2>3. The constants vs. process node</h2>
+  <h2>3. Reproduced with real sky130 data (ngspice)</h2>
+  <p>Figure 2 is the first-order <em>model</em>. Here is the <strong>real thing</strong> — an ngspice DC sweep of the open-source SkyWater <code>sky130_fd_pr__nfet_01v8</code> NMOS (L&nbsp;=&nbsp;0.15&nbsp;µm, V<sub>ds</sub>&nbsp;=&nbsp;0.9&nbsp;V, tt corner), with <code>g<sub>m</sub> = dI<sub>d</sub>/dV<sub>gs</sub></code> extracted at every step. Markers are sampled <strong>4 per decade at 1 · 2.2 · 4.7 · 10</strong>, so they land evenly on the log axis. Deck + raw data in <a href="https://github.com/borenw/gm-id-estimator/tree/main/spice">/spice</a>.</p>
+  <div class="card">
+    <div class="figtitle"><span class="fnum">Figure 3</span> · Real sky130 nfet_01v8 — g<sub>m</sub> vs I<sub>d</sub> (log–log), W = 1 / 10 / 100 µm</div>
+    <div class="plotwrap"><canvas id="sky" width="880" height="560"></canvas></div>
+    <div class="legend">
+      <span><i class="sw" style="background:#111;height:3px"></i> weak-inv. κ·I<sub>d</sub> (κ≈29 S/A, real)</span>
+      <span><i class="sw" style="background:#2f9e44"></i> W = 100 µm</span>
+      <span><i class="sw" style="background:#f08c00"></i> W = 10 µm</span>
+      <span><i class="sw" style="background:#e03131"></i> W = 1 µm</span>
+    </div>
+    <p class="cap">Real weak-inversion slope <strong>κ = (g<sub>m</sub>/I<sub>d</sub>)<sub>max</sub> ≈ 29 S/A</strong> — higher than the sketch's 20, because sky130's subthreshold factor n ≈ 1.3. Each curve hugs the κ line at low current, then rolls into the √-law region as the device enters strong inversion — exactly the shape of the hand sketch, but every point here is a simulated device, not an equation.</p>
+  </div>
+
+  <h2>4. The constants vs. process node</h2>
   <p>Only <strong>one</strong> of the two constants really moves with the node. κ is temperature-limited and stays ≈&nbsp;15–25 everywhere; the process story lives in <strong>μ<sub>n</sub>C<sub>ox</sub></strong> (thinner oxide raises \(C_{ox}\), but scaled/strained channels change \(\mu_n\)) and therefore in the corner current density. The table below is seeded with <em>rough textbook estimates</em> — edit any cell to your PDK and both the chart and the plot update.</p>
 
   <div class="note"><strong>These are order-of-magnitude teaching numbers, not fab data.</strong> Long-channel low-field μ<sub>n</sub>C<sub>ox</sub> varies widely with L, V<sub>ds</sub>, back-bias and flavor (LVT/HVT). For FinFET/GAA nodes μ<sub>n</sub>C<sub>ox</sub> loses its plain meaning (drive is quantized per fin) — use the gm/I<sub>d</sub> method with your PDK LUTs there. Replace the values with your own.</p>
@@ -146,7 +160,7 @@
   </div>
   <div class="cap">*eq2 coeff = the "1&nbsp;mS" in <code>g<sub>m</sub>=coeff·√(I<sub>d</sub>/1mA)·√(W/1µm)</code>, evaluated at that row's L<sub>min</sub>; equals \(\sqrt{2\mu_nC_{ox}\cdot(1\text{µm}/L_{min})\cdot1\text{mA}}\). Corner density uses L = L<sub>min</sub>.</div>
 
-  <div class="figtitle"><span class="fnum">Figure 3</span> · First-order constants vs process node — <strong>κ (bold black, left axis)</strong> is temperature-limited and stays ≈flat; μ<sub>n</sub>C<sub>ox</sub> (right axis) carries the process</div>
+  <div class="figtitle"><span class="fnum">Figure 4</span> · First-order constants vs process node — <strong>κ (bold black, left axis)</strong> is temperature-limited and stays ≈flat; μ<sub>n</sub>C<sub>ox</sub> (right axis) carries the process</div>
   <div class="plotwrap"><canvas id="chart" width="880" height="600"></canvas></div>
   <div class="legend">
     <span><i class="sw" style="background:#111;height:4px"></i> <strong>κ = (g<sub>m</sub>/I<sub>d</sub>)<sub>max</sub> (S/A) — left</strong></span>
@@ -155,7 +169,7 @@
     <span>◆ sky130 (open PDK)</span>
   </div>
 
-  <h2>4. How to use this as a design shortcut</h2>
+  <h2>5. How to use this as a design shortcut</h2>
   <ul style="margin:10px 0 10px 22px;">
     <li><strong>Given a bias current, want max efficiency?</strong> Stay on the eq&nbsp;1 line (weak/moderate inversion): \(g_m\approx\kappa I_d\) gives the most \(g_m\) per amp — great for low-power / low-noise front ends.</li>
     <li><strong>Given a target g<sub>m</sub> and headroom, want speed?</strong> Push into strong inversion (eq&nbsp;2). You pay current but gain \(f_T\) and matching.</li>
@@ -178,7 +192,7 @@ const NODES = [
   ["0.25 µm", 250, 200, 20, 0.25, false],
   ["0.18 µm", 180, 180, 20, 0.18, false],
   ["0.13 µm", 130, 320, 21, 0.13, false],
-  ["sky130 (open)", 130, 120, 24, 0.15, true],  // SkyWater sky130 nfet_01v8 — approx open-PDK values; refine via ngspice
+  ["sky130 (open)", 130, 70, 29, 0.15, true],  // SkyWater sky130 nfet_01v8 — REAL ngspice extraction (κ=(gm/Id)max≈29; µnCox effective≈70µA/V² short-channel); see Figure 3 & /spice
   ["90 nm",    90, 400, 22, 0.09, false],
   ["65 nm",    65, 480, 22, 0.065, false],
   ["45 nm",    45, 560, 23, 0.045, false],
@@ -357,8 +371,50 @@ function drawChart(){
     cc.fillText('sky130 ◆', x, m.t-14);});
 }
 
+// ---- Figure 3: REAL sky130 data (ngspice sweep, 4 pts/decade) ------------
+// [Id (A), gm (S)] sampled at 1·2.2·4.7·10 per decade. Source: spice/sky_gmid.spice
+const SKY = {
+  100: {col:'#2f9e44', d:[[1e-9,2.53829e-8],[2.2e-9,5.58535e-8],[4.7e-9,1.19299e-7],[1e-8,2.53699e-7],[2.2e-8,5.57643e-7],[4.7e-8,1.18977e-6],[1e-7,2.5266e-6],[2.2e-7,5.54222e-6],[4.7e-7,1.17912e-5],[1e-6,2.49383e-5],[2.2e-6,5.43681e-5],[4.7e-6,1.14687e-4],[1e-5,2.39664e-4],[2.2e-5,5.1335e-4],[4.7e-5,1.05771e-3],[1e-4,2.14171e-3],[2.2e-4,4.38961e-3],[4.7e-4,8.53248e-3],[1e-3,1.58214e-2]]},
+  10:  {col:'#f08c00', d:[[1e-9,2.9188e-8],[2.2e-9,6.41572e-8],[4.7e-9,1.36826e-7],[1e-8,2.9033e-7],[2.2e-8,6.36e-7],[4.7e-8,1.35048e-6],[1e-7,2.84816e-6],[2.2e-7,6.18218e-6],[4.7e-7,1.29605e-5],[1e-6,2.6842e-5],[2.2e-6,5.67144e-5],[4.7e-6,1.14665e-4],[1e-5,2.26156e-4],[2.2e-5,4.46644e-4],[4.7e-5,8.29745e-4],[1e-4,1.46187e-3],[2.2e-4,2.42326e-3],[4.7e-4,3.45997e-3],[1e-3,4.24208e-3]]},
+  1:   {col:'#e03131', d:[[1e-9,2.57944e-8],[2.2e-9,5.6519e-8],[4.7e-9,1.2e-7],[1e-8,2.52998e-7],[2.2e-8,5.48838e-7],[4.7e-8,1.14968e-6],[1e-7,2.37851e-6],[2.2e-7,5.01841e-6],[4.7e-7,1.01309e-5],[1e-6,1.99575e-5],[2.2e-6,3.94266e-5],[4.7e-6,7.35277e-5],[1e-5,1.3086e-4],[2.2e-5,2.21504e-4],[4.7e-5,3.27437e-4],[1e-4,4.21479e-4],[2.2e-4,4.87044e-4]]},
+};
+const KAPPA_REAL = 29;
+const sky=document.getElementById('sky'), sc=sky.getContext('2d');
+function drawSky(){
+  const W=sky.width,H=sky.height,m={l:74,r:24,t:24,b:64};
+  const px=W-m.l-m.r,py=H-m.t-m.b;
+  sc.clearRect(0,0,W,H);
+  const Ix0=1e-9,Ix1=2e-3, Gy0=1e-8,Gy1=1e-1;
+  const X=I=>m.l+(Math.log10(I)-Math.log10(Ix0))/(Math.log10(Ix1)-Math.log10(Ix0))*px;
+  const Y=g=>m.t+py-(Math.log10(g)-Math.log10(Gy0))/(Math.log10(Gy1)-Math.log10(Gy0))*py;
+  // decade grid
+  sc.font='13px sans-serif';
+  for(let e=-9;e<=-3;e++){const x=X(10**e);sc.strokeStyle='#e6e9ee';sc.lineWidth=1;sc.beginPath();sc.moveTo(x,m.t);sc.lineTo(x,m.t+py);sc.stroke();
+    sc.fillStyle='#5E6C84';sc.textAlign='center';sc.fillText('10'+supr(e),x,m.t+py+20);}
+  for(let e=-8;e<=-1;e++){const y=Y(10**e);sc.strokeStyle='#e6e9ee';sc.beginPath();sc.moveTo(m.l,y);sc.lineTo(m.l+px,y);sc.stroke();
+    sc.fillStyle='#5E6C84';sc.textAlign='right';sc.fillText('10'+supr(e),m.l-8,y+4);}
+  // frame + titles
+  sc.strokeStyle='#172B4D';sc.lineWidth=1.5;sc.beginPath();sc.moveTo(m.l,m.t);sc.lineTo(m.l,m.t+py);sc.lineTo(m.l+px,m.t+py);sc.stroke();
+  sc.fillStyle='#172B4D';sc.font='14px sans-serif';sc.textAlign='center';
+  sc.fillText('I_d  (A)',m.l+px/2,H-8);
+  sc.save();sc.translate(18,m.t+py/2);sc.rotate(-Math.PI/2);sc.fillText('g_m  (S)',0,0);sc.restore();
+  // weak-inversion κ·Id asymptote (slope 1)
+  sc.strokeStyle='#111';sc.lineWidth=1.6;sc.setLineDash([6,5]);sc.beginPath();
+  sc.moveTo(X(Ix0),Y(KAPPA_REAL*Ix0));sc.lineTo(X(Ix1),Y(KAPPA_REAL*Ix1));sc.stroke();sc.setLineDash([]);
+  sc.fillStyle='#111';sc.font='italic 13px sans-serif';sc.textAlign='left';
+  sc.fillText('g_m = κ·I_d , κ≈29', X(3e-8), Y(29*3e-8)-8);
+  // real curves + markers
+  [100,10,1].forEach(w=>{const s=SKY[w];
+    sc.strokeStyle=s.col;sc.lineWidth=2.4;sc.beginPath();
+    s.d.forEach((p,i)=>{const x=X(p[0]),y=Y(p[1]);i?sc.lineTo(x,y):sc.moveTo(x,y);});sc.stroke();
+    sc.fillStyle=s.col;s.d.forEach(p=>{sc.beginPath();sc.arc(X(p[0]),Y(p[1]),3.4,0,7);sc.fill();});
+    const last=s.d[s.d.length-1];sc.fillStyle=s.col;sc.font='bold 13px sans-serif';sc.textAlign='left';
+    sc.fillText('W='+w+'µm',X(last[0])+6,Y(last[1])+ (w===1?14:4));});
+}
+function supr(e){const map={'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};return String(e).split('').map(c=>map[c]||c).join('');}
+
 // ---- init ---------------------------------------------------------------
-function start(){ loadRow(2); l.value=0.36; syncLabels(); buildTable(); drawPlot(); drawChart();
+function start(){ loadRow(2); l.value=0.36; syncLabels(); buildTable(); drawPlot(); drawSky(); drawChart();
   const el=document.getElementById('lastmod'); const d=new Date(document.lastModified);
   el.textContent='Last updated: '+(isNaN(d)?document.lastModified:d.toLocaleDateString()); }
 start();

@@ -37,6 +37,21 @@ $$I_{d,\text{corner}}=\frac{2\,\mu_n C_{ox}}{\kappa^2}\frac{W}{L},\qquad \frac{I
 
 With the sketch's numbers this is **2.5 µA/µm** (i.e. `I_d = W/0.4`, W in µm) — reproducing the note *"if W = 10 µm we want I<sub>d</sub> > 25 µA for strong inversion."* ✔
 
+## Real sky130 data (ngspice)
+
+The page reproduces the sketch with **real silicon models**: an ngspice DC sweep of the open-source SkyWater `sky130_fd_pr__nfet_01v8` NMOS (L = 0.15 µm, V<sub>ds</sub> = 0.9 V, tt corner) with `gm = dId/dVgs` extracted at every step, plotted log–log for W = 1 / 10 / 100 µm. Markers are sampled **4 per decade (1 · 2.2 · 4.7 · 10)** so they sit evenly on the log axis.
+
+Measured result: real weak-inversion **κ = (gm/Id)<sub>max</sub> ≈ 29 S/A** (vs the sketch's 20 — sky130's subthreshold factor n ≈ 1.3), and a strong-inversion *effective* µnCox far below the textbook long-channel value (velocity saturation at L = 0.15 µm). The sky130 row in the constants table/chart uses these extracted numbers.
+
+Reproduce it yourself:
+
+```sh
+export PDK_ROOT=~/.volare/volare/sky130/versions/<hash>   # volare sky130A install
+cd spice && ngspice -b sky_gmid.spice                     # writes sky_gmid.txt
+```
+
+Deck and raw sweep output are in [`spice/`](spice/).
+
 ## Constants vs. process node
 
 Only **one** constant really moves with the node. **κ** — the emphasis of this page (bold black, plotted on the **left** axis) — is temperature-limited and stays ≈ 15–25 everywhere; the process story lives in **μ<sub>n</sub>C<sub>ox</sub>** (right axis) and hence the corner current density. The page ships an **editable** node table (seeded with rough textbook estimates) and redraws the chart and plot as you type your PDK values in.

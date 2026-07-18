@@ -1,0 +1,22 @@
+* sky130 nfet_01v8 — gm vs Id sweep (real PDK), Vds=0.9V, L=0.15um
+* Run:  PDK_ROOT=~/.volare/volare/sky130/versions/<hash>  ngspice -b sky_gmid.spice
+.lib "$PDK_ROOT/sky130A/libs.tech/ngspice/sky130.lib.spice" tt
+.param L=0.15
+Vg g 0 0
+Vd1 d1 0 0.9
+Vd2 d2 0 0.9
+Vd3 d3 0 0.9
+X1 d1 g 0 0 sky130_fd_pr__nfet_01v8 L={L} W=1   nf=1
+X2 d2 g 0 0 sky130_fd_pr__nfet_01v8 L={L} W=10  nf=1
+X3 d3 g 0 0 sky130_fd_pr__nfet_01v8 L={L} W=100 nf=1
+.control
+dc Vg 0 1.8 0.004
+let id1 = -i(Vd1)
+let id2 = -i(Vd2)
+let id3 = -i(Vd3)
+let gm1 = deriv(id1)
+let gm2 = deriv(id2)
+let gm3 = deriv(id3)
+wrdata sky_gmid.txt id1 gm1 id2 gm2 id3 gm3
+.endc
+.end
