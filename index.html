@@ -52,7 +52,7 @@
   /* --- interactive schematic calculator --- */
   .calc { border:1px solid var(--border); border-radius:10px; padding:18px 18px 14px; margin:6px 0 30px; background:#fff; }
   .calcrow { display:flex; gap:22px; flex-wrap:wrap; align-items:center; justify-content:center; }
-  .schem { position:relative; flex:1 1 300px; max-width:440px; margin:0 auto; }
+  .schem { position:relative; width:100%; margin:0 auto; }
   .schem img { width:100%; height:auto; display:block; }
   .plotcol { flex:1 1 370px; min-width:300px; }
   .schem svg { width:100%; height:auto; display:block; }
@@ -81,14 +81,22 @@
   canvas { width:100%; height:auto; display:block; }
   #dev { cursor:grab; touch-action:none; }
   #dev:active { cursor:grabbing; }
-  /* formula boxes overlaid on the device plot's top-right */
-  .fboxes { position:absolute; top:8px; right:10px; display:flex; flex-direction:column; gap:6px; align-items:flex-end; z-index:2; pointer-events:none; }
-  .fbox { background:rgba(255,255,255,.92); padding:2px 9px; color:#111; font-size:13px; }
-  .fbox.fweak { border:2px dashed #111; border-radius:6px; }
-  .fbox.fstrong { border:2px solid #111; border-radius:6px; }
+  /* formula boxes overlaid on the plot: weak (dashed) left half, strong (solid) right half, ~1/3 from bottom, 2x font */
+  .fbox { position:absolute; background:rgba(255,255,255,.9); padding:2px 10px; color:#111; font-size:24px; z-index:2; pointer-events:none; }
+  .fbox.fweak { left:4%; bottom:33%; border:2px dashed #111; border-radius:7px; }
+  .fbox.fstrong { right:3%; bottom:33%; border:2px solid #111; border-radius:7px; }
+  @media (max-width:640px){ .fbox { font-size:16px; } }
   /* schematic gm estimate: black, boxed — dashed (weak inv) or solid (strong inv) */
-  .gmest { color:#111; font-weight:800; border:2px solid #111; border-radius:5px; padding:0 5px; background:rgba(255,255,255,.75); }
+  .gmest { color:#111; font-weight:800; border:2px solid #111; border-radius:5px; padding:0 5px; }
   .gmest.weak { border-style:dashed; }
+  /* left column: schematic + sim-vs-est results table */
+  .leftcol { flex:1 1 320px; max-width:440px; }
+  .res { width:100%; border-collapse:collapse; margin-top:12px; font-size:14px; }
+  .res th, .res td { border:1px solid var(--border); padding:5px 9px; text-align:right; }
+  .res th:first-child, .res td:first-child { text-align:left; color:var(--text-sub); }
+  .res th { background:var(--blue-light); font-size:12px; }
+  .res .simcol { color:#2f9e44; font-weight:700; }
+  .res .estcol { color:var(--blue); font-weight:700; }
   .plotwrap { text-align:center; margin:10px 0; }
   table { width:100%; border-collapse:collapse; border:1px solid var(--border); font-size:13.5px; margin:10px 0; }
   th { background:var(--blue-light); text-align:right; padding:7px 10px; border-bottom:2px solid var(--blue); }
@@ -121,26 +129,30 @@
   <p>Type in <strong>W, L, id, M</strong> and the estimator computes g<sub>m</sub>, r<sub>o</sub>, v<sub>ov</sub>, v<sub>th</sub> and c<sub>g</sub> from the first-order model on this page (diode-connected → V<sub>ds</sub>=V<sub>gs</sub>, saturation). Pick the model source, device type and voltage flavor below the device.</p>
   <div class="calc">
     <div class="calcrow">
+    <div class="leftcol">
     <div class="schem">
       <img src="gm_id_diode_nmos.png" width="901" height="967" alt="Diode-connected MOSFET biased by an id current source, source to ground; labels M, W, L, id, gm, ro, vov, vth, cg">
-      <!-- input/output fields overlaid after the printed &quot;… =&quot; labels on the drawing -->
+      <!-- only the INPUT fields are overlaid on the drawing; outputs go in the table below -->
       <div class="ov" style="left:61%;top:20.5%"><input id="in_id" value="50" inputmode="decimal"><span class="unit">µA</span></div>
       <div class="ov" style="left:12.5%;top:58%"><input id="in_M" value="1" inputmode="numeric"></div>
       <div class="ov" style="left:30%;top:54%"><input id="in_W" value="10"><span class="unit">µm</span></div>
       <div class="ov" style="left:30%;top:60%"><input id="in_L" value="0.5"><span class="unit">µm</span></div>
-      <div class="ov" style="left:84%;top:43.5%"><span class="out" id="o_gm">—</span></div>
-      <div class="ov" style="left:84%;top:50%"><span class="out" id="o_ro">—</span></div>
-      <div class="ov" style="left:84%;top:56.5%"><span class="out" id="o_vov">—</span></div>
-      <div class="ov" style="left:84%;top:63%"><span class="out" id="o_vth">—</span></div>
-      <div class="ov" style="left:84%;top:69%"><span class="out" id="o_cg">—</span></div>
     </div><!--/schem-->
+    <table class="res">
+      <tr><th>at the op-point</th><th class="simcol">sim (sky130)</th><th class="estcol">est (formula)</th></tr>
+      <tr><td>g<sub>m</sub></td><td class="simcol" id="s_gm">—</td><td id="e_gm">—</td></tr>
+      <tr><td>r<sub>o</sub></td><td class="simcol" id="s_ro">—</td><td class="estcol" id="e_ro">—</td></tr>
+      <tr><td>v<sub>ov</sub></td><td class="simcol" id="s_vov">—</td><td class="estcol" id="e_vov">—</td></tr>
+      <tr><td>v<sub>th</sub></td><td class="simcol" id="s_vth">—</td><td class="estcol" id="e_vth">—</td></tr>
+      <tr><td>c<sub>g</sub></td><td class="simcol" id="s_cg">—</td><td class="estcol" id="e_cg">—</td></tr>
+    </table>
+    <div class="calcnote" style="text-align:left">Sim column = sky130 ngspice op-point at the operating current density (gm/I<sub>d</sub> method, ref L=0.15 µm); only for sky130·NMOS·1.8 V. Est g<sub>m</sub> box: dashed = weak, solid = strong inversion.</div>
+    </div><!--/leftcol-->
     <div class="plotcol">
       <div class="figtitle" style="margin:0 0 4px">g<sub>m</sub> vs I<sub>d</sub> — selected device (log–log)</div>
       <div class="plotwrap" style="position:relative"><canvas id="dev" width="900" height="540"></canvas>
-        <div class="fboxes">
-          <div class="fbox fweak" id="f_weak">weak</div>
-          <div class="fbox fstrong" id="f_strong">strong</div>
-        </div>
+        <div class="fbox fweak" id="f_weak">weak</div>
+        <div class="fbox fstrong" id="f_strong">strong</div>
       </div>
       <div class="legend" style="font-size:12px">
         <span><i class="sw" style="background:#2f9e44"></i> 100 µm</span>
@@ -531,19 +543,37 @@ function fS(x){ if(!isFinite(x)||x<=0)return '—'; if(x>=1e-3)return (x*1e3).to
 function fR(x){ if(!isFinite(x)||x<=0)return '—'; if(x>=1e6)return (x/1e6).toPrecision(3)+' MΩ'; if(x>=1e3)return (x/1e3).toPrecision(3)+' kΩ'; return x.toPrecision(3)+' Ω'; }
 function fV(x){ if(!isFinite(x))return '—'; return Math.abs(x)<1 ? (x*1e3).toFixed(0)+' mV' : x.toFixed(3)+' V'; }
 function fC(x){ if(!isFinite(x)||x<=0)return '—'; return x>=1e3 ? (x/1e3).toPrecision(3)+' pF' : x.toPrecision(3)+' fF'; }
+// sky130 nfet_01v8 op-point lookup vs current density J=Id/(W/L). Source: spice/sky_op.spice
+// [J, gm/Id (1/V), gds/Id (1/V), vth (V), cgg per area (fF/µm²)]
+const SIM_LUT=[[2.63e-11,29.12,1.073,0.721,2.268],[8.418e-11,29.04,1.045,0.721,2.331],[4.774e-10,28.77,1.002,0.721,2.498],[2.641e-09,28.17,0.96,0.721,2.769],[1.383e-08,26.89,0.9193,0.721,3.146],[3.948e-08,25.45,0.8928,0.721,3.439],[1.664e-07,22.32,0.8481,0.721,3.898],[5.664e-07,18.45,0.7806,0.721,4.325],[1.523e-06,14.55,0.6801,0.721,4.677],[3.274e-06,11.05,0.5689,0.721,4.945],[4.894e-06,9.106,0.5031,0.721,5.082],[7.869e-06,6.857,0.4247,0.721,5.236],[1.13e-05,5.303,0.3676,0.721,5.344],[1.501e-05,4.239,0.326,0.721,5.421],[1.76e-05,3.714,0.3044,0.721,5.46],[2.157e-05,3.112,0.2785,0.721,5.506],[2.564e-05,2.663,0.2585,0.721,5.541],[2.976e-05,2.318,0.2427,0.721,5.569],[3.391e-05,2.045,0.23,0.721,5.592],[3.669e-05,1.893,0.2229,0.721,5.606],[4.085e-05,1.7,0.2139,0.721,5.624],[4.502e-05,1.538,0.2065,0.721,5.64],[4.916e-05,1.402,0.2005,0.721,5.654],[5.191e-05,1.322,0.197,0.721,5.664],[5.602e-05,1.217,0.1927,0.721,5.677],[6.009e-05,1.125,0.1891,0.721,5.69],[6.413e-05,1.044,0.1862,0.721,5.702],[6.812e-05,0.9728,0.184,0.721,5.715]];
+function simLookup(id,Wt,L){ if(!(id>0))return null;
+  const J=id/(Wt/L), A=SIM_LUT, n=A.length; let i=0;
+  if(J<=A[0][0])i=0; else if(J>=A[n-1][0])i=n-2; else for(let k=0;k<n-1;k++){ if(J>=A[k][0]&&J<=A[k+1][0]){i=k;break;} }
+  const a=A[i],b=A[i+1], t=Math.max(0,Math.min(1,(Math.log(J)-Math.log(a[0]))/(Math.log(b[0])-Math.log(a[0]))));
+  const gmid=a[1]+(b[1]-a[1])*t, gdsid=a[2]+(b[2]-a[2])*t, vth=a[3]+(b[3]-a[3])*t, cggA=a[4]+(b[4]-a[4])*t;
+  return { gm:gmid*id, ro:1/(gdsid*id), vov:2/gmid, vth:vth, cg:cggA*Wt*L };   // cg fF
+}
 function calc(){
   const W=+$('in_W').value, L=+$('in_L').value, idua=+$('in_id').value, M=Math.max(1,Math.round(+$('in_M').value)||1);
-  const P=calcParams($('m_src').value,$('m_type').value,$('m_flav').value);
+  const src=$('m_src').value, type=$('m_type').value, flav=$('m_flav').value;
+  const P=calcParams(src,type,flav);
   const id=idua*1e-6, Wt=W*M, beta=P.uCox*1e-6*(Wt/L);      // beta in A/V²
   const gmS=Math.sqrt(2*beta*id), gmW=P.kappa*id;
   const weak=gmW<gmS, gm=Math.min(gmS,gmW);
   const vov=2*id/gmS, ro=1/((P.lamL/L)*id), cg=P.cox*Wt*L;   // cg in fF
-  const gmEl=$('o_gm'); gmEl.textContent=fS(gm); gmEl.className='gmest'+(weak?' weak':'');  // black, dashed=weak / solid=strong
-  $('o_ro').textContent=fR(ro);
-  $('o_vov').textContent=weak? fV(vov)+' (sub-Vth)':fV(vov);
-  $('o_vov').parentElement.classList.toggle('sub',weak);
-  $('o_vth').textContent=fV($('m_type').value==='PMOS'? -P.vth : P.vth);
-  $('o_cg').textContent=fC(cg);
+  // estimation column (formula)
+  const gmEl=$('e_gm'); gmEl.textContent=fS(gm); gmEl.className='gmest'+(weak?' weak':'');  // black box, dashed=weak / solid=strong
+  $('e_ro').textContent=fR(ro);
+  $('e_vov').textContent=weak? fV(vov)+' (sub-Vth)':fV(vov);
+  $('e_vth').textContent=fV(type==='PMOS'? -P.vth : P.vth);
+  $('e_cg').textContent=fC(cg);
+  // simulation column (sky130 op-point at this current density) — sky130·NMOS·1.8V only
+  const s=(src==='sky'&&type==='NMOS'&&flav==='1.8')?simLookup(id,Wt,L):null;
+  $('s_gm').textContent = s?fS(s.gm):'—';
+  $('s_ro').textContent = s?fR(s.ro):'—';
+  $('s_vov').textContent= s?fV(s.vov):'—';
+  $('s_vth').textContent= s?fV(s.vth):'—';
+  $('s_cg').textContent = s?fC(s.cg):'—';
   updateFormulas();
 }
 // two boxed formulas on the plot: weak (dashed, with the process κ) + strong (solid, with the process coefficient)
