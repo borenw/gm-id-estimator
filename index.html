@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>gm/Id First-Order Estimator — weak/strong-inversion corner</title>
+<script>
+  window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['$$','$$']] } };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  :root {
+    --blue:#0052CC; --blue-dark:#003D99; --blue-light:#DEEBFF; --blue-lighter:#F4F8FF;
+    --text:#172B4D; --text-sub:#5E6C84; --border:#DFE1E6;
+    --green:#2f9e44; --orange:#f08c00; --red:#e03131;
+    --grey-bg:#F4F5F7;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#fff; color:var(--text); line-height:1.55; }
+  .banner { background:linear-gradient(135deg,var(--blue) 0%,var(--blue-dark) 100%);
+    color:#fff; padding:30px 24px 24px; text-align:center; }
+  .banner h1 { font-size:26px; font-weight:600; margin-bottom:6px; }
+  .banner p { opacity:.9; font-size:15px; }
+  .wrap { max-width:940px; margin:0 auto; padding:26px 20px 70px; }
+  h2 { color:var(--blue-dark); font-size:20px; margin:34px 0 12px;
+    border-bottom:2px solid var(--blue-light); padding-bottom:6px; }
+  h3 { font-size:16px; margin:18px 0 8px; color:var(--text); }
+  p { margin:10px 0; }
+  a { color:var(--blue); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .drawing { text-align:center; margin:16px 0 8px; }
+  .drawing img { max-width:100%; height:auto; border:1px solid var(--border); border-radius:8px; }
+  .cap { font-size:13px; color:var(--text-sub); margin-top:6px; }
+  .eqbox { background:var(--blue-lighter); border:1px solid var(--blue-light);
+    border-radius:8px; padding:6px 18px; margin:14px 0; }
+  .card { background:var(--grey-bg); border:1px solid var(--border); border-radius:8px;
+    padding:16px 18px; margin:16px 0; }
+  .controls { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px 22px; }
+  .ctl label { display:block; font-size:13px; font-weight:600; color:var(--text-sub); margin-bottom:4px; }
+  .ctl input[type=range] { width:100%; }
+  .ctl select, .ctl input[type=number] { width:100%; padding:5px 7px; border:1px solid var(--border);
+    border-radius:5px; font-size:14px; }
+  .val { color:var(--blue); font-weight:700; }
+  canvas { max-width:100%; display:block; }
+  .plotwrap { text-align:center; margin:10px 0; }
+  table { width:100%; border-collapse:collapse; border:1px solid var(--border); font-size:13.5px; margin:10px 0; }
+  th { background:var(--blue-light); text-align:right; padding:7px 10px; border-bottom:2px solid var(--blue); }
+  th:first-child { text-align:left; }
+  td { padding:5px 8px; border-bottom:1px solid var(--border); text-align:right; }
+  td:first-child { text-align:left; font-weight:600; }
+  td input { width:74px; padding:3px 5px; border:1px solid var(--border); border-radius:4px;
+    text-align:right; font-size:13px; }
+  .note { font-size:13px; color:var(--text-sub); background:#FFF7E6; border-left:3px solid var(--orange);
+    padding:8px 12px; border-radius:0 5px 5px 0; margin:12px 0; }
+  .legend { font-size:13px; display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin:6px 0; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .sw { width:22px; height:3px; border-radius:2px; display:inline-block; }
+  code { background:#eef1f5; padding:1px 5px; border-radius:4px; font-size:13px; }
+  footer { margin-top:50px; text-align:center; color:var(--text-sub); font-size:13px;
+    border-top:1px solid var(--border); padding-top:18px; }
+  .toggle { font-size:13px; }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <h1>gm/I<sub>d</sub> First-Order Estimator</h1>
+  <p>Where does a MOSFET leave weak inversion? The <em>g<sub>m</sub> = κ·I<sub>d</sub></em> line meets the <em>√-law</em> curve — and how that corner moves with process node.</p>
+</div>
+
+<div class="wrap">
+
+  <div class="drawing">
+    <img src="gm_Id.png" alt="Hand sketch: gm vs Ids for a 180nm NMOS, L=0.36um. eq1 gm=20*Ids (weak-inversion line), eq2 gm=1mS*sqrt(Ids/1mA)*sqrt(W/1um) (strong-inversion sqrt law), with W=10um and W=100um curves and the 250uA corner.">
+    <div class="cap">The original bench sketch — a 180&nbsp;nm NMOS, L&nbsp;=&nbsp;0.36&nbsp;µm. Everything below is a live, generalized version of it.</div>
+  </div>
+
+  <h2>1. The two equations</h2>
+  <p>Two straight-line asymptotes bound the transconductance of a MOSFET as you sweep its drain current:</p>
+
+  <h3>eq&nbsp;1 — weak / moderate inversion (the "gm/I<sub>d</sub>" limit)</h3>
+  <div class="eqbox">$$g_m = \kappa\, I_d, \qquad \kappa \equiv \left(\frac{g_m}{I_d}\right)_{\max} = \frac{1}{n\,\phi_t} \approx 15\text{–}25\ \text{S/A}$$</div>
+  <p>In weak inversion the transistor behaves like a bipolar: \(g_m\) is simply proportional to \(I_d\), and the slope \(\kappa\) is set almost entirely by <em>physics and temperature</em> (\(\phi_t=kT/q\approx26\,\text{mV}\), subthreshold factor \(n\approx1.2\text{–}1.5\)) — <strong>not</strong> by the process node. The sketch uses <strong>κ = 20</strong>.</p>
+
+  <h3>eq&nbsp;2 — strong inversion (the square-law)</h3>
+  <div class="eqbox">$$g_m = \sqrt{2\,\mu_n C_{ox}\,\frac{W}{L}\,I_d}\;=\;\underbrace{1\,\text{mS}}_{\text{sketch}}\cdot\sqrt{\frac{I_d}{1\,\text{mA}}}\cdot\sqrt{\frac{W}{1\,\mu\text{m}}}$$</div>
+  <p>Here \(g_m\propto\sqrt{I_d}\), and the coefficient carries the <strong>process</strong> through \(\mu_n C_{ox}\). Matching the sketch's <code>1 mS·√(I_d/1mA)·√(W/1µm)</code> form at \(L=0.36\,\mu\text{m}\) pins down the process constant:</p>
+  <div class="eqbox">$$\mu_n C_{ox} = \frac{(1\,\text{mS})^2\,L}{2}\cdot\frac{1\,\mu\text{m}}{1\,\text{mA}\cdot1\,\mu\text{m}} \;\Rightarrow\; \boxed{\mu_n C_{ox}\approx 180\ \mu\text{A/V}^2}\quad(\text{180 nm, }L=0.36\,\mu\text{m})$$</div>
+
+  <h3>The corner — "how much current buys strong inversion"</h3>
+  <p>Set eq&nbsp;1&nbsp;=&nbsp;eq&nbsp;2. The two lines cross at:</p>
+  <div class="eqbox">$$I_{d,\text{corner}} = \frac{2\,\mu_n C_{ox}}{\kappa^2}\,\frac{W}{L},\qquad g_{m,\text{corner}}=\kappa\,I_{d,\text{corner}},\qquad \frac{I_{d,\text{corner}}}{W}=\frac{2\,\mu_n C_{ox}}{\kappa^2 L}$$</div>
+  <p>Plugging the sketch's numbers (\(\mu_n C_{ox}=180\,\mu\text{A/V}^2,\ \kappa=20,\ L=0.36\,\mu\text{m}\)) gives a corner current density of <strong>2.5&nbsp;µA/µm</strong> — i.e. <code>I_d = W / 0.4</code> with W in µm — exactly the "<em>if W = 10&nbsp;µm we want I<sub>d</sub> &gt; 25&nbsp;µA for strong inversion</em>" note on the sketch. ✔</p>
+
+  <h2>2. Live plot — g<sub>m</sub> vs I<sub>d</sub></h2>
+  <div class="card">
+    <div class="controls">
+      <div class="ctl">
+        <label>Process node</label>
+        <select id="node"></select>
+      </div>
+      <div class="ctl">
+        <label>μ<sub>n</sub>C<sub>ox</sub> = <span class="val" id="uxv"></span> µA/V²</label>
+        <input type="range" id="ux" min="80" max="800" step="5">
+      </div>
+      <div class="ctl">
+        <label>κ = (g<sub>m</sub>/I<sub>d</sub>)<sub>max</sub> = <span class="val" id="kv"></span> S/A</label>
+        <input type="range" id="k" min="10" max="30" step="0.5">
+      </div>
+      <div class="ctl">
+        <label>Channel length L = <span class="val" id="lv"></span> µm</label>
+        <input type="range" id="l" min="0.02" max="1" step="0.01">
+      </div>
+    </div>
+    <div class="plotwrap"><canvas id="plot" width="880" height="480"></canvas></div>
+    <div class="legend">
+      <span><i class="sw" style="background:#111"></i> eq 1: g<sub>m</sub>=κ·I<sub>d</sub> (weak inv.)</span>
+      <span><i class="sw" style="background:var(--green)"></i> W = 100 µm</span>
+      <span><i class="sw" style="background:var(--orange)"></i> W = 10 µm</span>
+      <span><i class="sw" style="background:var(--red)"></i> W = 1 µm</span>
+      <span>● corner (eq1 = eq2)</span>
+    </div>
+    <label class="toggle"><input type="checkbox" id="logtog"> log–log axes (straightens both asymptotes)</label>
+  </div>
+
+  <h2>3. The constants vs. process node</h2>
+  <p>Only <strong>one</strong> of the two constants really moves with the node. κ is temperature-limited and stays ≈&nbsp;15–25 everywhere; the process story lives in <strong>μ<sub>n</sub>C<sub>ox</sub></strong> (thinner oxide raises \(C_{ox}\), but scaled/strained channels change \(\mu_n\)) and therefore in the corner current density. The table below is seeded with <em>rough textbook estimates</em> — edit any cell to your PDK and both the chart and the plot update.</p>
+
+  <div class="note"><strong>These are order-of-magnitude teaching numbers, not fab data.</strong> Long-channel low-field μ<sub>n</sub>C<sub>ox</sub> varies widely with L, V<sub>ds</sub>, back-bias and flavor (LVT/HVT). For FinFET/GAA nodes μ<sub>n</sub>C<sub>ox</sub> loses its plain meaning (drive is quantized per fin) — use the gm/I<sub>d</sub> method with your PDK LUTs there. Replace the values with your own.</p>
+
+  <div style="overflow-x:auto">
+  <table id="ntable">
+    <thead><tr>
+      <th>Node</th><th>μ<sub>n</sub>C<sub>ox</sub> (µA/V²)</th><th>κ (S/A)</th><th>L<sub>min</sub> (µm)</th>
+      <th>eq2 coeff*<br>(mS)</th><th>corner I<sub>d</sub>/W<br>(µA/µm)</th>
+    </tr></thead>
+    <tbody id="nbody"></tbody>
+  </table>
+  </div>
+  <div class="cap">*eq2 coeff = the "1&nbsp;mS" in <code>g<sub>m</sub>=coeff·√(I<sub>d</sub>/1mA)·√(W/1µm)</code>, evaluated at that row's L<sub>min</sub>; equals \(\sqrt{2\mu_nC_{ox}\cdot(1\text{µm}/L_{min})\cdot1\text{mA}}\). Corner density uses L = L<sub>min</sub>.</div>
+
+  <div class="plotwrap"><canvas id="chart" width="880" height="440"></canvas></div>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--blue)"></i> μ<sub>n</sub>C<sub>ox</sub> (µA/V²)</span>
+    <span><i class="sw" style="background:var(--red)"></i> κ (S/A)</span>
+    <span><i class="sw" style="background:var(--green)"></i> corner I<sub>d</sub>/W at L<sub>min</sub> (µA/µm)</span>
+  </div>
+
+  <h2>4. How to use this as a design shortcut</h2>
+  <ul style="margin:10px 0 10px 22px;">
+    <li><strong>Given a bias current, want max efficiency?</strong> Stay on the eq&nbsp;1 line (weak/moderate inversion): \(g_m\approx\kappa I_d\) gives the most \(g_m\) per amp — great for low-power / low-noise front ends.</li>
+    <li><strong>Given a target g<sub>m</sub> and headroom, want speed?</strong> Push into strong inversion (eq&nbsp;2). You pay current but gain \(f_T\) and matching.</li>
+    <li><strong>The corner is the design sweet spot.</strong> \(I_d/W = 2\mu_nC_{ox}/(\kappa^2 L)\) tells you the minimum current density for strong inversion. Below it you're wasting \(g_m\)/speed; far above it you're wasting power.</li>
+  </ul>
+
+  <footer>
+    Bo Wang · <a href="https://github.com/borenw/gm-id-estimator">source on GitHub</a> ·
+    part of <a href="https://borenw.github.io/">Bo's Engineering Curriculum</a>
+    <br><span id="lastmod" style="font-size:12px"></span>
+  </footer>
+</div>
+
+<script>
+// ---- default node data (EDITABLE textbook estimates) --------------------
+// [label, node_nm (for x-axis), uCox uA/V^2, kappa S/A, Lmin um]
+const NODES = [
+  ["0.35 µm", 350, 170, 20, 0.35],
+  ["0.25 µm", 250, 200, 20, 0.25],
+  ["0.18 µm", 180, 180, 20, 0.18],
+  ["0.13 µm", 130, 320, 21, 0.13],
+  ["90 nm",    90, 400, 22, 0.09],
+  ["65 nm",    65, 480, 22, 0.065],
+  ["45 nm",    45, 560, 23, 0.045],
+  ["28 nm",    28, 600, 24, 0.028],
+  ["16 nm†",   16, 700, 26, 0.016],
+];
+let data = NODES.map(r => r.slice());
+let sel = 2; // default 180nm row
+
+// eq2 coeff (mS) at length L(um): sqrt(2*uCox*(1um/L)*1mA), in mS
+// uCox in A/V^2, currents/lengths in SI -> return mS
+function eq2coeff_mS(uCox_uA, L_um){
+  const uCox = uCox_uA*1e-6;          // A/V^2
+  const g2 = 2*uCox*(1e-6/(L_um*1e-6))*1e-3; // (S)^2 : gm^2 at Id=1mA, W=1um
+  return Math.sqrt(g2)*1e3;           // mS
+}
+function cornerDensity(uCox_uA, kappa, L_um){ // uA/um
+  const uCox = uCox_uA*1e-6;
+  return (2*uCox/(kappa*kappa*(L_um*1e-6)))*1e-6*1e6; // A/m -> uA/um  (A/m == uA/um)
+}
+
+// ---- controls -----------------------------------------------------------
+const nodeSel=document.getElementById('node');
+data.forEach((r,i)=>{const o=document.createElement('option');o.value=i;o.textContent=r[0];nodeSel.appendChild(o);});
+const ux=document.getElementById('ux'), k=document.getElementById('k'), l=document.getElementById('l');
+const uxv=document.getElementById('uxv'), kv=document.getElementById('kv'), lv=document.getElementById('lv');
+const logtog=document.getElementById('logtog');
+
+function loadRow(i){
+  sel=i; nodeSel.value=i;
+  ux.value=data[i][2]; k.value=data[i][3]; l.value=data[i][4];
+  syncLabels();
+}
+function syncLabels(){ uxv.textContent=(+ux.value).toFixed(0); kv.textContent=(+k.value).toFixed(1); lv.textContent=(+l.value).toFixed(2); }
+nodeSel.onchange=()=>loadRow(+nodeSel.value);
+[ux,k,l].forEach(el=>el.oninput=()=>{syncLabels();drawPlot();});
+logtog.onchange=drawPlot;
+
+// ---- gm vs Id plot ------------------------------------------------------
+const cv=document.getElementById('plot'), ctx=cv.getContext('2d');
+const Ws=[[100,'#2f9e44'],[10,'#f08c00'],[1,'#e03131']];
+function drawPlot(){
+  const uCox=+ux.value*1e-6, kappa=+k.value, L=+l.value*1e-6;
+  const W=cv.width,H=cv.height, m={l:70,r:20,t:20,b:52};
+  const px=W-m.l-m.r, py=H-m.t-m.b;
+  const log=logtog.checked;
+  ctx.clearRect(0,0,W,H);
+  // ranges
+  const Imin=log?1e-7:0, Imax=1e-2;         // A
+  const Gmax=100e-3, Gmin=log?1e-5:0;       // S
+  const X=I=> m.l + (log?(Math.log10(Math.max(I,Imin))-Math.log10(Imin))/(Math.log10(Imax)-Math.log10(Imin)):I/Imax)*px;
+  const Y=g=> m.t + py - (log?(Math.log10(Math.max(g,Gmin))-Math.log10(Gmin))/(Math.log10(Gmax)-Math.log10(Gmin)):g/Gmax)*py;
+  // grid + axes
+  ctx.strokeStyle='#e6e9ee'; ctx.fillStyle='#5E6C84'; ctx.font='11px sans-serif'; ctx.lineWidth=1;
+  const xt = log?[1e-7,1e-6,1e-5,1e-4,1e-3,1e-2]:[0,2e-3,4e-3,6e-3,8e-3,1e-2];
+  xt.forEach(v=>{const x=X(v);ctx.beginPath();ctx.moveTo(x,m.t);ctx.lineTo(x,m.t+py);ctx.stroke();
+    ctx.textAlign='center';ctx.fillText(fmtA(v),x,m.t+py+16);});
+  const yt = log?[1e-5,1e-4,1e-3,1e-2,1e-1]:[0,20e-3,40e-3,60e-3,80e-3,100e-3];
+  yt.forEach(v=>{const y=Y(v);ctx.beginPath();ctx.moveTo(m.l,y);ctx.lineTo(m.l+px,y);ctx.stroke();
+    ctx.textAlign='right';ctx.fillText(fmtS(v),m.l-8,y+4);});
+  ctx.strokeStyle='#172B4D';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(m.l,m.t);ctx.lineTo(m.l,m.t+py);ctx.lineTo(m.l+px,m.t+py);ctx.stroke();
+  ctx.fillStyle='#172B4D';ctx.font='13px sans-serif';ctx.textAlign='center';
+  ctx.fillText('I_d  (A)', m.l+px/2, H-10);
+  ctx.save();ctx.translate(16,m.t+py/2);ctx.rotate(-Math.PI/2);ctx.fillText('g_m  (S)',0,0);ctx.restore();
+
+  // eq1 line: gm = kappa*Id
+  ctx.strokeStyle='#111';ctx.lineWidth=2;ctx.beginPath();
+  let started=false;
+  for(let i=0;i<=200;i++){const I=log?Imin*Math.pow(Imax/Imin,i/200):Imax*i/200;const g=kappa*I;
+    const x=X(I),y=Y(g); if(g>Gmax){continue;} if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);}
+  ctx.stroke();
+
+  // eq2 curves per W + corners
+  Ws.forEach(([Wum,col])=>{
+    const Wm=Wum*1e-6;
+    ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();started=false;
+    for(let i=0;i<=200;i++){const I=log?Imin*Math.pow(Imax/Imin,i/200):Imax*i/200;
+      const g=Math.sqrt(2*uCox*(Wm/L)*I); const x=X(I),y=Y(g);
+      if(g>Gmax||(log&&g<Gmin)){continue;} if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);}
+    ctx.stroke();
+    // corner
+    const Ic=2*uCox/(kappa*kappa)*(Wm/L), gc=kappa*Ic;
+    if(gc<=Gmax){ctx.fillStyle=col;ctx.beginPath();ctx.arc(X(Ic),Y(gc),4.5,0,7);ctx.fill();
+      ctx.fillStyle='#172B4D';ctx.font='11px sans-serif';ctx.textAlign='left';
+      ctx.fillText(`${fmtA(Ic)}`, X(Ic)+7, Y(gc)-6);}
+  });
+}
+function fmtA(v){ if(v===0)return '0'; const a=Math.abs(v);
+  if(a>=1e-3)return (v*1e3).toPrecision(3).replace(/\.?0+$/,'')+' mA';
+  if(a>=1e-6)return (v*1e6).toPrecision(3).replace(/\.?0+$/,'')+' µA'; return (v*1e9).toFixed(0)+' nA';}
+function fmtS(v){ if(v===0)return '0'; const a=Math.abs(v);
+  if(a>=1e-3)return (v*1e3).toPrecision(3).replace(/\.?0+$/,'')+' mS';
+  if(a>=1e-6)return (v*1e6).toPrecision(3).replace(/\.?0+$/,'')+' µS'; return v+' S';}
+
+// ---- constants table + chart -------------------------------------------
+const nbody=document.getElementById('nbody');
+function buildTable(){
+  nbody.innerHTML='';
+  data.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    const coeff=eq2coeff_mS(r[2],r[4]), cd=cornerDensity(r[2],r[3],r[4]);
+    tr.innerHTML=`<td>${r[0]}</td>
+      <td><input type="number" data-i="${i}" data-c="2" value="${r[2]}" step="10"></td>
+      <td><input type="number" data-i="${i}" data-c="3" value="${r[3]}" step="0.5"></td>
+      <td><input type="number" data-i="${i}" data-c="4" value="${r[4]}" step="0.005"></td>
+      <td>${coeff.toFixed(2)}</td><td>${cd.toFixed(2)}</td>`;
+    nbody.appendChild(tr);
+  });
+  nbody.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{
+    const i=+inp.dataset.i,c=+inp.dataset.c; data[i][c]=+inp.value;
+    buildTable(); drawChart(); if(i===sel){loadRow(sel);drawPlot();}
+  });
+}
+const ch=document.getElementById('chart'), cc=ch.getContext('2d');
+function drawChart(){
+  const W=ch.width,H=ch.height,m={l:58,r:58,t:20,b:56};
+  const px=W-m.l-m.r,py=H-m.t-m.b;
+  cc.clearRect(0,0,W,H);
+  const xs=data.map(r=>r[1]);
+  const xmin=Math.log10(Math.min(...xs))-0.05, xmax=Math.log10(Math.max(...xs))+0.05;
+  const X=nm=>m.l+(Math.log10(nm)-xmin)/(xmax-xmin)*px;
+  // left axis: uCox (0..800), right axis: kappa & density share 0..40
+  const uMax=800, rMax=40;
+  const YL=v=>m.t+py-v/uMax*py;
+  const YR=v=>m.t+py-v/rMax*py;
+  cc.strokeStyle='#e6e9ee';cc.lineWidth=1;cc.fillStyle='#5E6C84';cc.font='11px sans-serif';
+  for(let v=0;v<=uMax;v+=200){const y=YL(v);cc.beginPath();cc.moveTo(m.l,y);cc.lineTo(m.l+px,y);cc.stroke();
+    cc.textAlign='right';cc.fillStyle='#0052CC';cc.fillText(v,m.l-8,y+4);}
+  for(let v=0;v<=rMax;v+=10){const y=YR(v);cc.textAlign='left';cc.fillStyle='#5E6C84';cc.fillText(v,m.l+px+8,y+4);}
+  // x labels
+  cc.fillStyle='#5E6C84';cc.textAlign='center';
+  data.forEach(r=>{cc.save();cc.translate(X(r[1]),m.t+py+14);cc.fillText(r[0],0,0);cc.restore();
+    cc.strokeStyle='#eef1f5';cc.beginPath();cc.moveTo(X(r[1]),m.t);cc.lineTo(X(r[1]),m.t+py);cc.stroke();});
+  cc.strokeStyle='#172B4D';cc.lineWidth=1.5;cc.beginPath();
+  cc.moveTo(m.l,m.t);cc.lineTo(m.l,m.t+py);cc.lineTo(m.l+px,m.t+py);cc.stroke();
+  cc.fillStyle='#0052CC';cc.textAlign='center';cc.font='12px sans-serif';
+  cc.save();cc.translate(16,m.t+py/2);cc.rotate(-Math.PI/2);cc.fillText('µnCox (µA/V²)',0,0);cc.restore();
+  cc.fillStyle='#5E6C84';cc.save();cc.translate(W-12,m.t+py/2);cc.rotate(-Math.PI/2);cc.fillText('κ  &  Id/W (µA/µm)',0,0);cc.restore();
+  cc.fillStyle='#172B4D';cc.fillText('process node  (larger → smaller)',m.l+px/2,H-10);
+  // series
+  function line(getV,Yf,col,dash){cc.strokeStyle=col;cc.lineWidth=2.2;cc.setLineDash(dash||[]);cc.beginPath();
+    data.forEach((r,i)=>{const x=X(r[1]),y=Yf(getV(r));i?cc.lineTo(x,y):cc.moveTo(x,y);});cc.stroke();
+    cc.setLineDash([]);cc.fillStyle=col;data.forEach(r=>{cc.beginPath();cc.arc(X(r[1]),Yf(getV(r)),3.5,0,7);cc.fill();});}
+  line(r=>r[2], YL, '#0052CC');                              // uCox left
+  line(r=>r[3], YR, '#e03131', [5,4]);                       // kappa right
+  line(r=>cornerDensity(r[2],r[3],r[4]), YR, '#2f9e44', [2,3]); // density right
+}
+
+// ---- init ---------------------------------------------------------------
+function start(){ loadRow(2); l.value=0.36; syncLabels(); buildTable(); drawPlot(); drawChart();
+  const el=document.getElementById('lastmod'); const d=new Date(document.lastModified);
+  el.textContent='Last updated: '+(isNaN(d)?document.lastModified:d.toLocaleDateString()); }
+start();
+</script>
+</body>
+</html>
