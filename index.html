@@ -79,6 +79,8 @@
     border-radius:5px; font-size:14px; }
   .val { color:var(--blue); font-weight:700; }
   canvas { width:100%; height:auto; display:block; }
+  #dev { cursor:grab; touch-action:none; }
+  #dev:active { cursor:grabbing; }
   .plotwrap { text-align:center; margin:10px 0; }
   table { width:100%; border-collapse:collapse; border:1px solid var(--border); font-size:13.5px; margin:10px 0; }
   th { background:var(--blue-light); text-align:right; padding:7px 10px; border-bottom:2px solid var(--blue); }
@@ -115,14 +117,14 @@
       <img src="gm_id_diode_nmos.png" width="901" height="967" alt="Diode-connected MOSFET biased by an id current source, source to ground; labels M, W, L, id, gm, ro, vov, vth, cg">
       <!-- input/output fields overlaid after the printed &quot;… =&quot; labels on the drawing -->
       <div class="ov" style="left:61%;top:20.5%"><input id="in_id" value="50" inputmode="decimal"><span class="unit">µA</span></div>
-      <div class="ov" style="left:16%;top:58%"><input id="in_M" value="1" inputmode="numeric"></div>
-      <div class="ov" style="left:34%;top:54%"><input id="in_W" value="10"><span class="unit">µm</span></div>
-      <div class="ov" style="left:34%;top:60%"><input id="in_L" value="0.5"><span class="unit">µm</span></div>
-      <div class="ov" style="left:81.5%;top:43.5%"><span class="out" id="o_gm">—</span></div>
-      <div class="ov" style="left:81.5%;top:50%"><span class="out" id="o_ro">—</span></div>
-      <div class="ov" style="left:81.5%;top:56.5%"><span class="out" id="o_vov">—</span></div>
-      <div class="ov" style="left:81.5%;top:63%"><span class="out" id="o_vth">—</span></div>
-      <div class="ov" style="left:81.5%;top:69%"><span class="out" id="o_cg">—</span></div>
+      <div class="ov" style="left:12.5%;top:58%"><input id="in_M" value="1" inputmode="numeric"></div>
+      <div class="ov" style="left:30%;top:54%"><input id="in_W" value="10"><span class="unit">µm</span></div>
+      <div class="ov" style="left:30%;top:60%"><input id="in_L" value="0.5"><span class="unit">µm</span></div>
+      <div class="ov" style="left:84%;top:43.5%"><span class="out" id="o_gm">—</span></div>
+      <div class="ov" style="left:84%;top:50%"><span class="out" id="o_ro">—</span></div>
+      <div class="ov" style="left:84%;top:56.5%"><span class="out" id="o_vov">—</span></div>
+      <div class="ov" style="left:84%;top:63%"><span class="out" id="o_vth">—</span></div>
+      <div class="ov" style="left:84%;top:69%"><span class="out" id="o_cg">—</span></div>
     </div><!--/schem-->
     <div class="plotcol">
       <div class="figtitle" style="margin:0 0 4px">g<sub>m</sub> vs I<sub>d</sub> — selected device (log–log)</div>
@@ -532,22 +534,25 @@ function calc(){
 }
 // right-hand gm-vs-Id plot — real sky130 curves, or the selected node's model curves
 const dev=$('dev'), dc=dev.getContext('2d');
+let devMap=null;
 function drawDev(){
   const src=$('m_src').value, type=$('m_type').value, flav=$('m_flav').value;
   const P=calcParams(src,type,flav);
   const real=(src==='sky'&&type==='NMOS'&&flav==='1.8');   // measured data only for this combo
-  const W=dev.width,H=dev.height,m={l:60,r:16,t:22,b:50};
+  const W=dev.width,H=dev.height,m={l:96,r:24,t:34,b:84};
   const px=W-m.l-m.r,py=H-m.t-m.b;
   dc.clearRect(0,0,W,H);
-  const Ix0=1e-9,Ix1=1e-1,Gy0=1e-8,Gy1=1e0;   // extended Id range (up to 100 mA) for wide devices
+  const Ix0=1e-7,Ix1=1e-2,Gy0=1e-6,Gy1=1e-1;   // default Id range 1e-7..1e-2 A; gm scaled to match (5 decades each)
   const X=I=>m.l+(Math.log10(I)-Math.log10(Ix0))/(Math.log10(Ix1)-Math.log10(Ix0))*px;
   const Y=g=>m.t+py-(Math.log10(g)-Math.log10(Gy0))/(Math.log10(Gy1)-Math.log10(Gy0))*py;
-  dc.font='11px sans-serif';
-  for(let e=-9;e<=-1;e++){const x=X(10**e);dc.strokeStyle='#eef1f5';dc.lineWidth=1;dc.beginPath();dc.moveTo(x,m.t);dc.lineTo(x,m.t+py);dc.stroke();dc.fillStyle='#5E6C84';dc.textAlign='center';dc.fillText('10'+supr(e),x,m.t+py+16);}
-  for(let e=-8;e<=0;e++){const y=Y(10**e);dc.strokeStyle='#eef1f5';dc.beginPath();dc.moveTo(m.l,y);dc.lineTo(m.l+px,y);dc.stroke();dc.fillStyle='#5E6C84';dc.textAlign='right';dc.fillText('10'+supr(e),m.l-6,y+4);}
+  devMap={ml:m.l,mt:m.t,px,py,Ix0,Ix1,Gy0,Gy1};
+  const TICK='22px sans-serif', TITLE='bold 24px sans-serif';
+  dc.font=TICK;
+  for(let e=-7;e<=-2;e++){const x=X(10**e);dc.strokeStyle='#eef1f5';dc.lineWidth=1;dc.beginPath();dc.moveTo(x,m.t);dc.lineTo(x,m.t+py);dc.stroke();dc.fillStyle='#5E6C84';dc.textAlign='center';dc.fillText('10'+supr(e),x,m.t+py+28);}
+  for(let e=-6;e<=-1;e++){const y=Y(10**e);dc.strokeStyle='#eef1f5';dc.beginPath();dc.moveTo(m.l,y);dc.lineTo(m.l+px,y);dc.stroke();dc.fillStyle='#5E6C84';dc.textAlign='right';dc.fillText('10'+supr(e),m.l-8,y+7);}
   dc.strokeStyle='#172B4D';dc.lineWidth=1.5;dc.beginPath();dc.moveTo(m.l,m.t);dc.lineTo(m.l,m.t+py);dc.lineTo(m.l+px,m.t+py);dc.stroke();
-  dc.fillStyle='#172B4D';dc.font='12px sans-serif';dc.textAlign='center';dc.fillText('I_d (A)',m.l+px/2,H-6);
-  dc.save();dc.translate(14,m.t+py/2);dc.rotate(-Math.PI/2);dc.fillText('g_m (S)',0,0);dc.restore();
+  dc.fillStyle='#172B4D';dc.font=TITLE;dc.textAlign='center';dc.fillText('I_d (A)',m.l+px/2,H-16);
+  dc.save();dc.translate(28,m.t+py/2);dc.rotate(-Math.PI/2);dc.fillText('g_m (S)',0,0);dc.restore();
   // per-width, two-segment model: dashed weak inversion (gm=κ·Id) up to the corner,
   // then solid strong inversion (gm=√(2·µnCox·(W/L)·Id)) beyond it — same κ, µnCox as the selection.
   const cols={100:'#2f9e44',10:'#f08c00',1:'#e03131'};
@@ -555,28 +560,52 @@ function drawDev(){
   const uc=P.uCox*1e-6;
   [100,10,1].forEach(w=>{
     const beta=uc*(w/Lref), Idc=2*beta/(P.kappa*P.kappa);   // corner: κ·Id = √(2β·Id)
-    // weak-inversion dashed segment
-    dc.strokeStyle=cols[w];dc.lineWidth=2.2;dc.setLineDash([6,5]);dc.beginPath();
-    dc.moveTo(X(Ix0),Y(P.kappa*Ix0)); dc.lineTo(X(Math.min(Idc,Ix1)),Y(P.kappa*Math.min(Idc,Ix1)));dc.stroke();
-    // strong-inversion solid segment
+    dc.strokeStyle=cols[w];dc.lineWidth=2.4;dc.setLineDash([7,5]);dc.beginPath();
+    dc.moveTo(X(Ix0),Y(P.kappa*Ix0)); dc.lineTo(X(Math.min(Math.max(Idc,Ix0),Ix1)),Y(P.kappa*Math.min(Math.max(Idc,Ix0),Ix1)));dc.stroke();
     dc.setLineDash([]);dc.beginPath();let st=false;
-    for(let k=0;k<=120;k++){const I=Idc*Math.pow(Ix1/Idc,k/120); if(I>Ix1)break;
+    for(let k=0;k<=120;k++){const I=Idc*Math.pow(Ix1/Idc,k/120); if(I>Ix1)break; if(I<Ix0)continue;
       const gm=Math.sqrt(2*beta*I); if(gm<Gy0||gm>Gy1){st=false;continue;} const x=X(I),y=Y(gm);st?dc.lineTo(x,y):dc.moveTo(x,y);st=true;}
     dc.stroke();
-    // sky130: overlay the actual measured points (real data) as small dots
-    if(real){ dc.fillStyle=cols[w]; SKY[w].d.forEach(p=>{dc.beginPath();dc.arc(X(p[0]),Y(p[1]),2.2,0,7);dc.fill();}); }
+    if(real){ dc.fillStyle=cols[w]; SKY[w].d.forEach(p=>{if(p[0]<Ix0||p[0]>Ix1)return;dc.beginPath();dc.arc(X(p[0]),Y(p[1]),2.6,0,7);dc.fill();}); }
   });
   // operating point from the live inputs (actual W·M / L)
   const W_=+$('in_W').value,L_=+$('in_L').value,M_=Math.max(1,Math.round(+$('in_M').value)||1),id_=(+$('in_id').value)*1e-6;
   const beta=P.uCox*1e-6*(W_*M_/L_), gmop=Math.min(P.kappa*id_,Math.sqrt(2*beta*id_));
   if(id_>0&&isFinite(gmop)&&gmop>0){const x=X(id_),y=Y(gmop);
-    dc.strokeStyle='#0052CC';dc.lineWidth=1;dc.setLineDash([3,3]);dc.beginPath();dc.moveTo(x,m.t+py);dc.lineTo(x,y);dc.lineTo(m.l,y);dc.stroke();dc.setLineDash([]);
-    dc.fillStyle='#0052CC';dc.beginPath();dc.arc(x,y,5,0,7);dc.fill();
-    dc.font='bold 11px sans-serif';dc.textAlign='left';dc.fillText('op · W='+(W_*M_)+'µm',x+8,y-6);}
-  // source tag
-  dc.fillStyle=real?'#2f9e44':'#5E6C84';dc.font='bold 12px sans-serif';dc.textAlign='right';
-  dc.fillText(real?'sky130 — measured':({t180:'180 nm',t65:'65 nm',t28:'28 nm',sky:'sky130'}[src]+' — model'),m.l+px-4,m.t+12);
+    dc.strokeStyle='#0052CC';dc.lineWidth=1;dc.setLineDash([4,3]);dc.beginPath();dc.moveTo(x,m.t+py);dc.lineTo(x,y);dc.lineTo(m.l,y);dc.stroke();dc.setLineDash([]);
+    dc.fillStyle='#0052CC';dc.beginPath();dc.arc(x,y,6,0,7);dc.fill();
+    dc.strokeStyle='#0052CC';dc.lineWidth=2;dc.beginPath();dc.arc(x,y,12,0,7);dc.stroke();
+    dc.fillStyle='#0052CC';dc.font='bold 13px sans-serif';dc.textAlign='left';dc.fillText('op · W='+(+(W_*M_).toPrecision(3))+'µm',x+15,y-8);}
+  // hint + source tag
+  dc.fillStyle='#8792a2';dc.font='italic 13px sans-serif';dc.textAlign='left';dc.fillText('drag ● :  ←→ id · ↑↓ W',m.l+6,m.t+16);
+  dc.fillStyle=real?'#2f9e44':'#5E6C84';dc.font='bold 14px sans-serif';dc.textAlign='right';
+  dc.fillText(real?'sky130 — measured':({t180:'180 nm',t65:'65 nm',t28:'28 nm',sky:'sky130'}[src]+' — model'),m.l+px-4,m.t+16);
 }
+// --- drag the op-point orthogonally: x → id, y → W ---
+const clampv=(v,a,b)=>Math.max(a,Math.min(b,v));
+function mapX(I){const M=devMap;return M.ml+(Math.log10(I)-Math.log10(M.Ix0))/(Math.log10(M.Ix1)-Math.log10(M.Ix0))*M.px;}
+function mapY(g){const M=devMap;return M.mt+M.py-(Math.log10(g)-Math.log10(M.Gy0))/(Math.log10(M.Gy1)-Math.log10(M.Gy0))*M.py;}
+function opPix(){const P=calcParams($('m_src').value,$('m_type').value,$('m_flav').value);
+  const W_=+$('in_W').value,L_=+$('in_L').value,M_=Math.max(1,Math.round(+$('in_M').value)||1),id_=(+$('in_id').value)*1e-6;
+  const gm=Math.min(P.kappa*id_,Math.sqrt(2*P.uCox*1e-6*(W_*M_/L_)*id_));return {x:mapX(id_),y:mapY(gm)};}
+function cxy(e){const r=dev.getBoundingClientRect();return {x:(e.clientX-r.left)*dev.width/r.width,y:(e.clientY-r.top)*dev.height/r.height};}
+let drag=null;
+dev.addEventListener('pointerdown',e=>{ if(!devMap)return; const p=cxy(e),o=opPix();
+  if(Math.hypot(p.x-o.x,p.y-o.y)<52){drag={sx:p.x,sy:p.y,mode:null};try{dev.setPointerCapture(e.pointerId);}catch(_){} e.preventDefault();}});
+dev.addEventListener('pointermove',e=>{ if(!drag)return; const p=cxy(e),M=devMap;
+  if(!drag.mode){const dx=Math.abs(p.x-drag.sx),dy=Math.abs(p.y-drag.sy); if(dx<4&&dy<4)return; drag.mode=dx>=dy?'x':'y';}
+  if(drag.mode==='x'){const fx=clampv((p.x-M.ml)/M.px,0,1);
+    const I=Math.pow(10,Math.log10(M.Ix0)+fx*(Math.log10(M.Ix1)-Math.log10(M.Ix0)));
+    $('in_id').value=+(I*1e6).toPrecision(3);}
+  else {const fy=clampv((M.mt+M.py-p.y)/M.py,0,1);
+    const g=Math.pow(10,Math.log10(M.Gy0)+fy*(Math.log10(M.Gy1)-Math.log10(M.Gy0)));
+    const P=calcParams($('m_src').value,$('m_type').value,$('m_flav').value);
+    const L_=+$('in_L').value,M_=Math.max(1,Math.round(+$('in_M').value)||1),id_=(+$('in_id').value)*1e-6;
+    let Wv=g*g*L_/(2*P.uCox*1e-6*M_*id_); Wv=clampv(Wv,0.05,1e4);
+    $('in_W').value=+Wv.toPrecision(3);}
+  calc(); drawDev(); e.preventDefault();});
+function endDrag(){drag=null;}
+dev.addEventListener('pointerup',endDrag); dev.addEventListener('pointercancel',endDrag);
 ['in_W','in_L','in_id','in_M','m_src','m_type','m_flav'].forEach(id=>{
   const el=$(id); const upd=()=>{calc();drawDev();};
   el.addEventListener('input',upd); el.addEventListener('change',upd);
