@@ -47,6 +47,22 @@
   tr.sky td { background:#FFF7E6; }
   tr.sky td:first-child { color:var(--orange); }
   td.kcol input { font-weight:800; color:#111; }
+  /* --- interactive schematic calculator --- */
+  .calc { border:1px solid var(--border); border-radius:10px; padding:18px 18px 14px; margin:6px 0 30px; background:#fff; }
+  .schem { position:relative; max-width:520px; margin:0 auto; }
+  .schem svg { width:100%; height:auto; display:block; }
+  .ov { position:absolute; transform:translateY(-50%); font-size:15px; color:var(--text); white-space:nowrap; line-height:1.1; }
+  .ov label { font-weight:600; }
+  .ov input { width:52px; padding:2px 4px; border:1px solid var(--blue-light); border-radius:4px; font-size:14px; background:var(--blue-lighter); }
+  .ov input:focus { outline:2px solid var(--blue); background:#fff; }
+  .ov .unit { color:var(--text-sub); font-size:12px; }
+  .ov .out { font-weight:700; color:var(--blue); }
+  .ov.sub .out { color:var(--orange); }
+  .modelbar { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
+  .modelbar .mb { display:flex; flex-direction:column; gap:3px; font-size:12px; font-weight:600; color:var(--text-sub); }
+  .modelbar select { padding:5px 8px; border:1px solid var(--border); border-radius:5px; font-size:14px; font-weight:400; color:var(--text); }
+  .calcnote { font-size:12.5px; color:var(--text-sub); margin-top:12px; text-align:center; }
+  @media (max-width:520px){ .ov { font-size:12px; } .ov input { width:40px; } }
   .eqbox { background:var(--blue-lighter); border:1px solid var(--blue-light);
     border-radius:8px; padding:6px 18px; margin:14px 0; }
   .card { background:var(--grey-bg); border:1px solid var(--border); border-radius:8px;
@@ -85,6 +101,67 @@
 </div>
 
 <div class="wrap">
+
+  <h2 style="margin-top:8px">Interactive g<sub>m</sub> calculator — diode-connected MOSFET</h2>
+  <p>Type in <strong>W, L, id, M</strong> and the estimator computes g<sub>m</sub>, r<sub>o</sub>, v<sub>ov</sub>, v<sub>th</sub> and c<sub>g</sub> from the first-order model on this page (diode-connected → V<sub>ds</sub>=V<sub>gs</sub>, saturation). Pick the model source, device type and voltage flavor below the device.</p>
+  <div class="calc">
+    <div class="schem">
+      <svg viewBox="0 0 900 1000" role="img" aria-label="Diode-connected MOSFET biased by an id current source, source to ground">
+        <g fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- top rail + current source -->
+          <line x1="430" y1="50" x2="430" y2="151"/>
+          <circle cx="430" cy="205" r="54"/>
+          <line x1="430" y1="170" x2="430" y2="236"/>
+          <polyline points="414,216 430,240 446,216"/>
+          <!-- source-node to drain -->
+          <line x1="430" y1="259" x2="430" y2="516"/>
+          <!-- diode feedback loop (drain -> right -> down -> gate) -->
+          <polyline points="430,395 645,395 645,568"/>
+          <line x1="645" y1="568" x2="446" y2="568"/>
+          <path d="M446,568 A16,16 0 0 0 414,568"/>
+          <line x1="414" y1="568" x2="410" y2="568"/>
+          <!-- transistor: gate plate + channel bar -->
+          <line x1="408" y1="516" x2="408" y2="604" stroke-width="6"/>
+          <line x1="430" y1="516" x2="430" y2="604" stroke-width="6"/>
+          <!-- source lead + NMOS arrow -->
+          <line x1="430" y1="604" x2="430" y2="736"/>
+          <polygon points="430,600 421,614 439,614" fill="#111" stroke="none"/>
+          <!-- ground -->
+          <line x1="398" y1="736" x2="462" y2="736"/>
+          <line x1="410" y1="750" x2="450" y2="750"/>
+          <line x1="421" y1="764" x2="439" y2="764"/>
+        </g>
+        <g fill="#111" stroke="none"><circle cx="430" cy="395" r="6"/><circle cx="645" cy="568" r="6"/></g>
+      </svg>
+      <!-- overlaid inputs / outputs positioned over the drawing -->
+      <div class="ov" style="left:55.5%;top:20.5%"><label>id =</label> <input id="in_id" value="50" inputmode="decimal"><span class="unit">µA</span></div>
+      <div class="ov" style="left:3.5%;top:57%"><label>M =</label> <input id="in_M" value="1" inputmode="numeric"></div>
+      <div class="ov" style="left:21.5%;top:53.7%"><label>W =</label> <input id="in_W" value="10"><span class="unit">µm</span></div>
+      <div class="ov" style="left:21.5%;top:59.6%"><label>L =</label> <input id="in_L" value="0.5"><span class="unit">µm</span></div>
+      <div class="ov" style="left:73%;top:43.2%"><label>gm =</label> <span class="out" id="o_gm">—</span></div>
+      <div class="ov" style="left:73%;top:48.8%"><label>ro =</label> <span class="out" id="o_ro">—</span></div>
+      <div class="ov" style="left:73%;top:54.4%"><label>vov =</label> <span class="out" id="o_vov">—</span></div>
+      <div class="ov" style="left:73%;top:60%"><label>vth =</label> <span class="out" id="o_vth">—</span></div>
+      <div class="ov" style="left:73%;top:65.8%"><label>cg =</label> <span class="out" id="o_cg">—</span></div>
+    </div>
+    <div class="modelbar">
+      <div class="mb">Model source
+        <select id="m_src">
+          <option value="sky">SkyWater sky130 (measured)</option>
+          <option value="t180">Tech-node est · 180 nm</option>
+          <option value="t65">Tech-node est · 65 nm</option>
+          <option value="t28">Tech-node est · 28 nm</option>
+        </select>
+      </div>
+      <div class="mb">Device type
+        <select id="m_type"><option>NMOS</option><option>PMOS</option></select>
+      </div>
+      <div class="mb">Voltage flavor
+        <select id="m_flav"><option value="1.8">1.8 V</option><option value="3.3">3.3 V</option><option value="5.0">5.0 V</option></select>
+      </div>
+    </div>
+    <div class="calcnote">First-order saturation model: g<sub>m</sub>=√(2·µ<sub>n</sub>C<sub>ox</sub>·(MW/L)·id), v<sub>ov</sub>=2·id/g<sub>m</sub>, r<sub>o</sub>=1/(λid) with λ=λ′/L, c<sub>g</sub>=C<sub>ox</sub>·MW·L. sky130/NMOS-1.8V uses measured params (Figure 3); other combinations are first-order estimates — replace with your PDK.</div>
+  </div>
 
   <div class="drawing">
     <div class="imgwrap">
@@ -429,8 +506,42 @@ function drawSky(){
 }
 function supr(e){const map={'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};return String(e).split('').map(c=>map[c]||c).join('');}
 
+// ---- interactive schematic calculator -----------------------------------
+// base params per source (NMOS, 1.8V ref): [µnCox µA/V², κ S/A, |Vth| V, Cox fF/µm², λ'·L V⁻¹·µm]
+function calcParams(src,type,flav){
+  const B={sky:[70,29,0.45,8.4,0.10], t180:[180,22,0.45,8.6,0.10],
+           t65:[480,24,0.40,13,0.06], t28:[600,25,0.35,18,0.04]}[src];
+  let [uCox,kappa,vth,cox,lamL]=B;
+  if(type==='PMOS'){ uCox*=0.28; kappa*=0.95; lamL*=1.2; }
+  if(flav==='3.3'){ uCox*=0.7; vth=0.60; cox*=0.58; lamL*=1.3; }
+  else if(flav==='5.0'){ uCox*=0.5; vth=0.70; cox*=0.37; lamL*=1.6; }
+  return {uCox,kappa,vth,cox,lamL};
+}
+const $=id=>document.getElementById(id);
+function fS(x){ if(!isFinite(x)||x<=0)return '—'; if(x>=1e-3)return (x*1e3).toPrecision(3)+' mS'; if(x>=1e-6)return (x*1e6).toPrecision(3)+' µS'; return (x*1e9).toPrecision(3)+' nS'; }
+function fR(x){ if(!isFinite(x)||x<=0)return '—'; if(x>=1e6)return (x/1e6).toPrecision(3)+' MΩ'; if(x>=1e3)return (x/1e3).toPrecision(3)+' kΩ'; return x.toPrecision(3)+' Ω'; }
+function fV(x){ if(!isFinite(x))return '—'; return Math.abs(x)<1 ? (x*1e3).toFixed(0)+' mV' : x.toFixed(3)+' V'; }
+function fC(x){ if(!isFinite(x)||x<=0)return '—'; return x>=1e3 ? (x/1e3).toPrecision(3)+' pF' : x.toPrecision(3)+' fF'; }
+function calc(){
+  const W=+$('in_W').value, L=+$('in_L').value, idua=+$('in_id').value, M=Math.max(1,Math.round(+$('in_M').value)||1);
+  const P=calcParams($('m_src').value,$('m_type').value,$('m_flav').value);
+  const id=idua*1e-6, Wt=W*M, beta=P.uCox*1e-6*(Wt/L);      // beta in A/V²
+  const gmS=Math.sqrt(2*beta*id), gmW=P.kappa*id;
+  const weak=gmW<gmS, gm=Math.min(gmS,gmW);
+  const vov=2*id/gmS, ro=1/((P.lamL/L)*id), cg=P.cox*Wt*L;   // cg in fF
+  $('o_gm').textContent=fS(gm);
+  $('o_ro').textContent=fR(ro);
+  $('o_vov').textContent=weak? fV(vov)+' (sub-Vth)':fV(vov);
+  $('o_vov').parentElement.classList.toggle('sub',weak);
+  $('o_vth').textContent=fV($('m_type').value==='PMOS'? -P.vth : P.vth);
+  $('o_cg').textContent=fC(cg);
+}
+['in_W','in_L','in_id','in_M','m_src','m_type','m_flav'].forEach(id=>{
+  const el=$(id); el.addEventListener('input',calc); el.addEventListener('change',calc);
+});
+
 // ---- init ---------------------------------------------------------------
-function start(){ loadRow(2); l.value=0.36; syncLabels(); buildTable(); drawPlot(); drawSky(); drawChart();
+function start(){ loadRow(2); l.value=0.36; syncLabels(); buildTable(); drawPlot(); drawSky(); drawChart(); calc();
   const el=document.getElementById('lastmod'); const d=new Date(document.lastModified);
   el.textContent='Last updated: '+(isNaN(d)?document.lastModified:d.toLocaleDateString()); }
 start();
