@@ -49,7 +49,9 @@
   td.kcol input { font-weight:800; color:#111; }
   /* --- interactive schematic calculator --- */
   .calc { border:1px solid var(--border); border-radius:10px; padding:18px 18px 14px; margin:6px 0 30px; background:#fff; }
-  .schem { position:relative; max-width:520px; margin:0 auto; }
+  .calcrow { display:flex; gap:22px; flex-wrap:wrap; align-items:center; justify-content:center; }
+  .schem { position:relative; flex:1 1 300px; max-width:430px; margin:0 auto; }
+  .plotcol { flex:1 1 370px; min-width:300px; }
   .schem svg { width:100%; height:auto; display:block; }
   .ov { position:absolute; transform:translateY(-50%); font-size:15px; color:var(--text); white-space:nowrap; line-height:1.1; }
   .ov label { font-weight:600; }
@@ -105,6 +107,7 @@
   <h2 style="margin-top:8px">Interactive g<sub>m</sub> calculator — diode-connected MOSFET</h2>
   <p>Type in <strong>W, L, id, M</strong> and the estimator computes g<sub>m</sub>, r<sub>o</sub>, v<sub>ov</sub>, v<sub>th</sub> and c<sub>g</sub> from the first-order model on this page (diode-connected → V<sub>ds</sub>=V<sub>gs</sub>, saturation). Pick the model source, device type and voltage flavor below the device.</p>
   <div class="calc">
+    <div class="calcrow">
     <div class="schem">
       <svg viewBox="0 0 900 1000" role="img" aria-label="Diode-connected MOSFET biased by an id current source, source to ground">
         <g fill="none" stroke="#111" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
@@ -143,7 +146,19 @@
       <div class="ov" style="left:73%;top:54.4%"><label>vov =</label> <span class="out" id="o_vov">—</span></div>
       <div class="ov" style="left:73%;top:60%"><label>vth =</label> <span class="out" id="o_vth">—</span></div>
       <div class="ov" style="left:73%;top:65.8%"><label>cg =</label> <span class="out" id="o_cg">—</span></div>
+    </div><!--/schem-->
+    <div class="plotcol">
+      <div class="figtitle" style="margin:0 0 4px">g<sub>m</sub> vs I<sub>d</sub> — selected device (log–log)</div>
+      <div class="plotwrap"><canvas id="dev" width="560" height="430"></canvas></div>
+      <div class="legend" style="font-size:12px">
+        <span><i class="sw" style="background:#111;height:3px"></i> κ·I<sub>d</sub></span>
+        <span><i class="sw" style="background:#2f9e44"></i> 100 µm</span>
+        <span><i class="sw" style="background:#f08c00"></i> 10 µm</span>
+        <span><i class="sw" style="background:#e03131"></i> 1 µm</span>
+        <span><i class="sw" style="background:#0052CC"></i> ● op-point</span>
+      </div>
     </div>
+    </div><!--/calcrow-->
     <div class="modelbar">
       <div class="mb">Model source
         <select id="m_src">
@@ -536,12 +551,57 @@ function calc(){
   $('o_vth').textContent=fV($('m_type').value==='PMOS'? -P.vth : P.vth);
   $('o_cg').textContent=fC(cg);
 }
+// right-hand gm-vs-Id plot — real sky130 curves, or the selected node's model curves
+const dev=$('dev'), dc=dev.getContext('2d');
+function drawDev(){
+  const src=$('m_src').value, type=$('m_type').value, flav=$('m_flav').value;
+  const P=calcParams(src,type,flav);
+  const real=(src==='sky'&&type==='NMOS'&&flav==='1.8');   // measured data only for this combo
+  const W=dev.width,H=dev.height,m={l:60,r:16,t:22,b:50};
+  const px=W-m.l-m.r,py=H-m.t-m.b;
+  dc.clearRect(0,0,W,H);
+  const Ix0=1e-9,Ix1=1e-2,Gy0=1e-8,Gy1=1e-1;
+  const X=I=>m.l+(Math.log10(I)-Math.log10(Ix0))/(Math.log10(Ix1)-Math.log10(Ix0))*px;
+  const Y=g=>m.t+py-(Math.log10(g)-Math.log10(Gy0))/(Math.log10(Gy1)-Math.log10(Gy0))*py;
+  dc.font='11px sans-serif';
+  for(let e=-9;e<=-2;e++){const x=X(10**e);dc.strokeStyle='#eef1f5';dc.lineWidth=1;dc.beginPath();dc.moveTo(x,m.t);dc.lineTo(x,m.t+py);dc.stroke();dc.fillStyle='#5E6C84';dc.textAlign='center';dc.fillText('10'+supr(e),x,m.t+py+16);}
+  for(let e=-8;e<=-1;e++){const y=Y(10**e);dc.strokeStyle='#eef1f5';dc.beginPath();dc.moveTo(m.l,y);dc.lineTo(m.l+px,y);dc.stroke();dc.fillStyle='#5E6C84';dc.textAlign='right';dc.fillText('10'+supr(e),m.l-6,y+4);}
+  dc.strokeStyle='#172B4D';dc.lineWidth=1.5;dc.beginPath();dc.moveTo(m.l,m.t);dc.lineTo(m.l,m.t+py);dc.lineTo(m.l+px,m.t+py);dc.stroke();
+  dc.fillStyle='#172B4D';dc.font='12px sans-serif';dc.textAlign='center';dc.fillText('I_d (A)',m.l+px/2,H-6);
+  dc.save();dc.translate(14,m.t+py/2);dc.rotate(-Math.PI/2);dc.fillText('g_m (S)',0,0);dc.restore();
+  // weak-inversion κ·Id asymptote
+  dc.strokeStyle='#111';dc.lineWidth=1.4;dc.setLineDash([6,5]);dc.beginPath();dc.moveTo(X(Ix0),Y(P.kappa*Ix0));dc.lineTo(X(Ix1),Y(P.kappa*Ix1));dc.stroke();dc.setLineDash([]);
+  // three W curves: real measured (sky130) or model
+  const cols={100:'#2f9e44',10:'#f08c00',1:'#e03131'};
+  const Lref={sky:0.15,t180:0.18,t65:0.065,t28:0.028}[src];
+  [100,10,1].forEach(w=>{
+    dc.strokeStyle=cols[w];dc.lineWidth=2.2;dc.beginPath();
+    if(real){ SKY[w].d.forEach((p,i)=>{const x=X(p[0]),y=Y(p[1]);i?dc.lineTo(x,y):dc.moveTo(x,y);});dc.stroke();
+      dc.fillStyle=cols[w];SKY[w].d.forEach(p=>{dc.beginPath();dc.arc(X(p[0]),Y(p[1]),2.4,0,7);dc.fill();}); }
+    else { let st=false;
+      for(let k=0;k<=140;k++){const I=Ix0*Math.pow(Ix1/Ix0,k/140);
+        const gm=Math.min(P.kappa*I, Math.sqrt(2*P.uCox*1e-6*(w/Lref)*I));
+        if(gm<Gy0||gm>Gy1){st=false;continue;} const x=X(I),y=Y(gm); st?dc.lineTo(x,y):dc.moveTo(x,y);st=true;}
+      dc.stroke(); }
+  });
+  // operating point from the live inputs (actual W·M / L)
+  const W_=+$('in_W').value,L_=+$('in_L').value,M_=Math.max(1,Math.round(+$('in_M').value)||1),id_=(+$('in_id').value)*1e-6;
+  const beta=P.uCox*1e-6*(W_*M_/L_), gmop=Math.min(P.kappa*id_,Math.sqrt(2*beta*id_));
+  if(id_>0&&isFinite(gmop)&&gmop>0){const x=X(id_),y=Y(gmop);
+    dc.strokeStyle='#0052CC';dc.lineWidth=1;dc.setLineDash([3,3]);dc.beginPath();dc.moveTo(x,m.t+py);dc.lineTo(x,y);dc.lineTo(m.l,y);dc.stroke();dc.setLineDash([]);
+    dc.fillStyle='#0052CC';dc.beginPath();dc.arc(x,y,5,0,7);dc.fill();
+    dc.font='bold 11px sans-serif';dc.textAlign='left';dc.fillText('op · W='+(W_*M_)+'µm',x+8,y-6);}
+  // source tag
+  dc.fillStyle=real?'#2f9e44':'#5E6C84';dc.font='bold 12px sans-serif';dc.textAlign='right';
+  dc.fillText(real?'sky130 — measured':({t180:'180 nm',t65:'65 nm',t28:'28 nm',sky:'sky130'}[src]+' — model'),m.l+px-4,m.t+12);
+}
 ['in_W','in_L','in_id','in_M','m_src','m_type','m_flav'].forEach(id=>{
-  const el=$(id); el.addEventListener('input',calc); el.addEventListener('change',calc);
+  const el=$(id); const upd=()=>{calc();drawDev();};
+  el.addEventListener('input',upd); el.addEventListener('change',upd);
 });
 
 // ---- init ---------------------------------------------------------------
-function start(){ loadRow(2); l.value=0.36; syncLabels(); buildTable(); drawPlot(); drawSky(); drawChart(); calc();
+function start(){ loadRow(2); l.value=0.36; syncLabels(); buildTable(); drawPlot(); drawSky(); drawChart(); calc(); drawDev();
   const el=document.getElementById('lastmod'); const d=new Date(document.lastModified);
   el.textContent='Last updated: '+(isNaN(d)?document.lastModified:d.toLocaleDateString()); }
 start();
