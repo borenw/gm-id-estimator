@@ -22,7 +22,9 @@
     color:#fff; padding:30px 24px 24px; text-align:center; }
   .banner h1 { font-size:26px; font-weight:600; margin-bottom:6px; }
   .banner p { opacity:.9; font-size:15px; }
-  .wrap { max-width:940px; margin:0 auto; padding:26px 20px 70px; }
+  .wrap { max-width:min(1360px,95vw); margin:0 auto; padding:26px 24px 70px; }
+  /* keep running prose at a readable measure; charts/tables/tool span full width */
+  .wrap > p, .wrap > h2, .wrap > h3, .wrap > ul, .wrap > .eqbox { max-width:1000px; }
   h2 { color:var(--blue-dark); font-size:20px; margin:34px 0 12px;
     border-bottom:2px solid var(--blue-light); padding-bottom:6px; }
   h3 { font-size:16px; margin:18px 0 8px; color:var(--text); }
@@ -76,7 +78,7 @@
   .ctl select, .ctl input[type=number] { width:100%; padding:5px 7px; border:1px solid var(--border);
     border-radius:5px; font-size:14px; }
   .val { color:var(--blue); font-weight:700; }
-  canvas { max-width:100%; display:block; }
+  canvas { width:100%; height:auto; display:block; }
   .plotwrap { text-align:center; margin:10px 0; }
   table { width:100%; border-collapse:collapse; border:1px solid var(--border); font-size:13.5px; margin:10px 0; }
   th { background:var(--blue-light); text-align:right; padding:7px 10px; border-bottom:2px solid var(--blue); }
@@ -124,7 +126,7 @@
     </div><!--/schem-->
     <div class="plotcol">
       <div class="figtitle" style="margin:0 0 4px">g<sub>m</sub> vs I<sub>d</sub> — selected device (log–log)</div>
-      <div class="plotwrap"><canvas id="dev" width="560" height="430"></canvas></div>
+      <div class="plotwrap"><canvas id="dev" width="900" height="540"></canvas></div>
       <div class="legend" style="font-size:12px">
         <span><i class="sw" style="background:#2f9e44"></i> 100 µm</span>
         <span><i class="sw" style="background:#f08c00"></i> 10 µm</span>
@@ -204,7 +206,7 @@
       </div>
     </div>
     <div class="figtitle"><span class="fnum">Figure 2</span> · Transconductance g<sub>m</sub> vs drain current I<sub>d</sub> — the weak-inversion line meets the √-law curve</div>
-    <div class="plotwrap"><canvas id="plot" width="880" height="480"></canvas></div>
+    <div class="plotwrap"><canvas id="plot" width="1240" height="540"></canvas></div>
     <div class="legend">
       <span><i class="sw" style="background:#111"></i> eq 1: g<sub>m</sub>=κ·I<sub>d</sub> (weak inv.)</span>
       <span><i class="sw" style="background:var(--green)"></i> W = 100 µm</span>
@@ -219,7 +221,7 @@
   <p>Figure 2 is the first-order <em>model</em>. Here is the <strong>real thing</strong> — an ngspice DC sweep of the open-source SkyWater <code>sky130_fd_pr__nfet_01v8</code> NMOS (L&nbsp;=&nbsp;0.15&nbsp;µm, V<sub>ds</sub>&nbsp;=&nbsp;0.9&nbsp;V, tt corner), with <code>g<sub>m</sub> = dI<sub>d</sub>/dV<sub>gs</sub></code> extracted at every step. Markers are sampled <strong>4 per decade at 1 · 2.2 · 4.7 · 10</strong>, so they land evenly on the log axis. Deck + raw data in <a href="https://github.com/borenw/gm-id-estimator/tree/main/spice">/spice</a>.</p>
   <div class="card">
     <div class="figtitle"><span class="fnum">Figure 3</span> · Real sky130 nfet_01v8 — g<sub>m</sub> vs I<sub>d</sub> (log–log), W = 1 / 10 / 100 µm</div>
-    <div class="plotwrap"><canvas id="sky" width="880" height="560"></canvas></div>
+    <div class="plotwrap"><canvas id="sky" width="1240" height="600"></canvas></div>
     <div class="legend">
       <span><i class="sw" style="background:#111;height:3px"></i> weak-inv. κ·I<sub>d</sub> (κ≈29 S/A, real)</span>
       <span><i class="sw" style="background:#2f9e44"></i> W = 100 µm</span>
@@ -246,7 +248,7 @@
   <div class="cap">*eq2 coeff = the "1&nbsp;mS" in <code>g<sub>m</sub>=coeff·√(I<sub>d</sub>/1mA)·√(W/1µm)</code>, evaluated at that row's L<sub>min</sub>; equals \(\sqrt{2\mu_nC_{ox}\cdot(1\text{µm}/L_{min})\cdot1\text{mA}}\). Corner density uses L = L<sub>min</sub>.</div>
 
   <div class="figtitle"><span class="fnum">Figure 4</span> · First-order constants vs process node — <strong>κ (bold black, left axis)</strong> is temperature-limited and stays ≈flat; μ<sub>n</sub>C<sub>ox</sub> (right axis) carries the process</div>
-  <div class="plotwrap"><canvas id="chart" width="880" height="600"></canvas></div>
+  <div class="plotwrap"><canvas id="chart" width="1240" height="640"></canvas></div>
   <div class="legend">
     <span><i class="sw" style="background:#111;height:4px"></i> <strong>κ = (g<sub>m</sub>/I<sub>d</sub>)<sub>max</sub> (S/A) — left</strong></span>
     <span><i class="sw" style="background:var(--blue)"></i> μ<sub>n</sub>C<sub>ox</sub> (µA/V²) — right</span>
